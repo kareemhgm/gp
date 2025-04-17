@@ -65,10 +65,28 @@ elif selected == "🔍 Predict":
             }])
             
             # Ensure correct order
-            input_df = input_df[["type", "amount", "oldbalanceOrg", "newbalanceOrig", 
-                                 "oldbalanceDest", "newbalanceDest", "isFlaggedFraud", "step"]]
+  input_df = pd.DataFrame([{
+    'type': type_input,
+    'amount': amount,
+    'oldbalanceOrg': old_balance,
+    'newbalanceOrig': new_balance,
+    'oldbalanceDest': 0.0,
+    'newbalanceDest': 0.0,
+    'isFlaggedFraud': 0,
+    'step': 1
+}])
 
-            prediction = model.predict(input_df)[0]
+# Encoding transaction type to match training format
+type_mapping = {'PAYMENT': 0, 'TRANSFER': 1, 'CASH_OUT': 2}
+input_df['type'] = input_df['type'].map(type_mapping)
+
+# Ensure correct column order
+input_df = input_df[["type", "amount", "oldbalanceOrg", "newbalanceOrig", 
+                     "oldbalanceDest", "newbalanceDest", "isFlaggedFraud", "step"]]
+
+# Prediction
+prediction = model.predict(input_df)[0]
+         
 
             if prediction == 1:
                 st.error("🚨 This transaction is FRAUDULENT.")
