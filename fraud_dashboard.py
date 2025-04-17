@@ -3,6 +3,44 @@ import streamlit as st
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
+st.markdown("""
+<style>
+/* Global Styling */
+body, .stApp {
+    background-color: #f1f3f6;
+    color: #111 !important;
+}
+
+/* Dark mode toggle — overrides default streamlit sidebar */
+[data-testid="stSidebar"] {
+    background-color: #0f172a !important;
+    color: white !important;
+}
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] p {
+    color: white !important;
+}
+
+/* Button Hover */
+button[kind="primary"] {
+    background-color: #6366f1 !important;
+    color: white !important;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+button[kind="primary"]:hover {
+    background-color: #4f46e5 !important;
+}
+
+/* Cards and sections */
+div[data-testid="stExpander"] {
+    background-color: #ffffffaa;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # Load your trained XGBoost model
 model = joblib.load("xgb_model.pkl")
@@ -165,7 +203,7 @@ elif tab == "📊 Insights":
     feature_names = model.get_booster().feature_names
     feat_imp = pd.Series(model.feature_importances_, index=feature_names)
     st.bar_chart(feat_imp.sort_values())
-except:
+    except:
     st.warning("Feature importance cannot be displayed. Model may not support it.")
 
     st.bar_chart(feat_imp.sort_values())
