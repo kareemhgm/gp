@@ -10,6 +10,42 @@ model = joblib.load("xgb_model.pkl")
 # Streamlit page config
 st.set_page_config(page_title="AI Fraud Suite", layout="wide")
 
+st.markdown("""
+<style>
+body {
+    background: #f4f6f8;
+}
+section.main > div {
+    padding: 2rem;
+}
+.sidebar .css-1d391kg {
+    background: #1f2937 !important;
+    color: white !important;
+}
+.css-1aumxhk {
+    color: white;
+}
+button {
+    background-color: #6366f1 !important;
+    color: white !important;
+    border-radius: 10px !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.3s ease;
+}
+button:hover {
+    background-color: #4f46e5 !important;
+}
+.stAlert {
+    border-left: 6px solid #2563eb;
+    background: rgba(59,130,246,0.1);
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # ---------- LANDING PAGE / LOGIN ----------
 LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Artificial_Intelligence_logo.svg/2048px-Artificial_Intelligence_logo.svg.png"
 
@@ -125,7 +161,13 @@ elif tab == "📥 Monitor":
 # ---------- INSIGHTS TAB ----------
 elif tab == "📊 Insights":
     st.subheader("📈 Feature Importance")
-    feat_imp = pd.Series(model.feature_importances_, index=["type", "amount", "oldbalanceOrg", "newbalanceOrig"])
+    try:
+    feature_names = model.get_booster().feature_names
+    feat_imp = pd.Series(model.feature_importances_, index=feature_names)
+    st.bar_chart(feat_imp.sort_values())
+except:
+    st.warning("Feature importance cannot be displayed. Model may not support it.")
+
     st.bar_chart(feat_imp.sort_values())
 
 # ---------- SUPPORT TAB ----------
@@ -137,6 +179,19 @@ elif tab == "💬 Support":
             st.success("✅ Your message has been sent. Our team will respond shortly.")
         else:
             st.warning("Please enter a message.")
+
+st.markdown("""
+<style>
+.reportview-container .main .block-container{
+    max-width: 100%;
+    padding: 2rem;
+}
+.stApp {
+    overflow: auto;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 
 
