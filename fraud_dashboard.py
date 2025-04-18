@@ -4,8 +4,8 @@ import numpy as np
 import joblib
 from datetime import datetime
 
-# Load trained model
-model = joblib.load('xgb_model.pkl')
+model = joblib.load('xgb_fraud_model.pkl')
+
 
 # Set page config
 st.set_page_config(page_title="AI Fraud Detection Dashboard", layout="wide")
