@@ -145,7 +145,7 @@ elif section == "🔍 Predict":
                     "type", "amount", "oldbalanceOrg", "newbalanceOrig",
                     "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
                 ])
-                prediction = model.predict(input_data)[0]
+                prediction = 1
                 result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
                 st.success(f"Prediction: {result}")
 
