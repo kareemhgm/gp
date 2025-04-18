@@ -128,28 +128,30 @@ if section == "🏠 Overview":
 # -------------------------------------
 # PREDICT
 # -------------------------------------
+# -------------------------------------
+# PREDICT SECTION
+# -------------------------------------
 elif section == "🔍 Predict":
     st.subheader("⚡ Real-Time Transaction Prediction")
 
     if model:
         amount = st.number_input("Transaction Amount", value=5000.0)
         tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"])
-        old_balance = st.number_input("Old Balance", value=10000.0)
-        new_balance = st.number_input("New Balance", value=500.0)
+        old_balance = st.number_input("Old Balance (Origin)", value=10000.0)
+        new_balance = st.number_input("New Balance (Origin)", value=0.0)
+
+        # ✅ New Destination Balance Inputs
+        old_dest = st.number_input("Old Balance (Destination)", value=0.0)
+        new_dest = st.number_input("New Balance (Destination)", value=0.0)
 
         if st.button("🔍 Predict"):
             try:
-                # Map type and build feature vector with 8 features
                 type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
+
                 input_data = pd.DataFrame([[
-                    type_map[tx_type],                # type
-                    amount,                           # amount
-                    old_balance,                      # oldbalanceOrg
-                    new_balance,                      # newbalanceOrig
-                    0.0,                              # oldbalanceDest (assumed)
-                    0.0,                              # newbalanceDest (assumed)
-                    int(old_balance == 0),            # flagOldZero
-                    int(new_balance == 0)             # flagNewZero
+                    type_map[tx_type], amount, old_balance, new_balance,
+                    old_dest, new_dest,
+                    int(old_balance == 0), int(new_balance == 0)
                 ]], columns=[
                     "type", "amount", "oldbalanceOrg", "newbalanceOrig",
                     "oldbalanceDest", "newbalanceDest", "flagOldZero", "flagNewZero"
@@ -159,7 +161,7 @@ elif section == "🔍 Predict":
                 result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
                 st.success(f"Prediction: {result}")
 
-                # Save to session state & log file
+                # Save to session & log
                 record = {
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "Amount": amount,
@@ -168,9 +170,9 @@ elif section == "🔍 Predict":
                     "New Balance": new_balance,
                     "Prediction": result
                 }
-
                 st.session_state.predicted_transactions.append(record)
 
+                # Save to CSV log
                 try:
                     log_df = pd.DataFrame([record])
                     log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
