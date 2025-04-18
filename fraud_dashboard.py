@@ -80,7 +80,65 @@ elif section == "📬 Upload & Monitor":
         st.info("No transactions monitored yet.")
 
 elif section == "📊 Reports":
-    elif section == "📊 Reports":
+   elif section == "📊 Reports":
+    st.subheader("📊 Fraud Detection Insights")
+
+    try:
+        # Load test dataset for evaluation
+        from sklearn.model_selection import train_test_split
+        from sklearn.metrics import classification_report, confusion_matrix
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        # Load full dataset
+        df_full = pd.read_csv("PS_20174392719_1491204439457_log.csv")
+        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+        df_full = df_full.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
+
+        # Define features and target
+        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+        X = df_full[features]
+        y = df_full['isFraud']
+
+        # Split data for testing model
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # 🔍 MODEL TESTING
+        st.markdown("### 🧠 Model Evaluation")
+
+        y_pred = model.predict(X_test)
+
+        st.markdown("#### 📌 Confusion Matrix")
+        cm = confusion_matrix(y_test, y_pred)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
+        st.pyplot(fig)
+
+        st.markdown("#### 📄 Classification Report")
+        report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
+        st.dataframe(report_df)
+
+        # 🔥 CORRELATION HEATMAP
+        st.markdown("### 🔥 Correlation Heatmap")
+        fig2, ax2 = plt.subplots(figsize=(10, 6))
+        sns.heatmap(df_full.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
+        st.pyplot(fig2)
+
+        # 📈 AMOUNT DISTRIBUTION
+        st.markdown("### 📈 Transaction Amount Distribution")
+        fig3, ax3 = plt.subplots(figsize=(10, 5))
+        sns.histplot(data=df_full[df_full['isFraud'] == 0], x='amount', bins=60, color='green', label='Legit', ax=ax3)
+        sns.histplot(data=df_full[df_full['isFraud'] == 1], x='amount', bins=60, color='red', label='Fraud', ax=ax3)
+        ax3.set_xlim(0, 200000)
+        ax3.set_title("Transaction Amounts – Fraud vs Legit")
+        ax3.legend()
+        st.pyplot(fig3)
+
+    except Exception as e:
+        st.warning("⚠️ Could not generate analytics.")
+        st.text(str(e))
+
     st.subheader("📊 Fraud Insights & Analysis")
 elif section == "📊 Reports":
     st.subheader("📊 Fraud Detection Insights")
