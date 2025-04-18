@@ -186,64 +186,86 @@ elif section == "📁 All Logs":
     except FileNotFoundError:
         st.info("No log file found yet.")
 
-# REPORTS
+# -------------------------------------
+# REPORTS TAB
+# -------------------------------------
 elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
 
-    if "model" not in st.session_state or "uploaded_csv_path" not in st.session_state:
-        st.error("❌ Model or dataset not found. Please upload both a .pkl and a .csv file.")
-    else:
-        try:
-            model = st.session_state["model"]
-            df = pd.read_csv(st.session_state["uploaded_csv_path"])
+    if not model or not uploaded_dataset:
+        st.error("❌ Model or dataset not found. Please upload both a .pkl and a .csv file to view analytics.")
+        st.stop()
 
-            if "type" in df.columns:
-                df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
-                df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+    try:
+        df = pd.read_csv("uploaded_data.csv")
 
-            drop_cols = ["nameOrig", "nameDest", "isFlaggedFraud", "step"]
-            df.drop(columns=[c for c in drop_cols if c in df.columns], inplace=True, errors="ignore")
+        # Optional: Filter types
+        if "type" in df.columns:
+            df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
+            df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
 
-            required = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest', 'isFraud']
-            if not all(col in df.columns for col in required):
-                st.warning("⚠️ Required columns missing.")
-            else:
-                X = df[required[:-1]]
-                y = df["isFraud"]
-                _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-                y_pred = model.predict(X_test)
+        # Drop optional columns if they exist
+        drop_cols = ["nameOrig", "nameDest", "isFlaggedFraud", "step"]
+        df = df.drop(columns=[col for col in drop_cols if col in df.columns], errors="ignore")
 
-                st.markdown("### 📌 Confusion Matrix")
-                fig, ax = plt.subplots()
-                sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
-                st.pyplot(fig)
+        # Add engineered features to match model input
+        df["diffOrig"] = df["oldbalanceOrg"] - df["amount"]
+        df["estNewDest"] = df["newbalanceOrig"] + df["amount"]
+        df["flagOldZero"] = (df["oldbalanceOrg"] == 0).astype(int)
+        df["flagNewZero"] = (df["newbalanceOrig"] == 0).astype(int)
 
-                st.markdown("### 📄 Classification Report")
-                report = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
-                st.dataframe(report)
+        # Final features expected by model
+        required = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig',
+                    'diffOrig', 'estNewDest', 'flagOldZero', 'flagNewZero', 'isFraud']
+        if not all(col in df.columns for col in required):
+            st.warning("⚠️ Dataset is missing one or more required columns.")
+            st.stop()
 
-                st.markdown("### 🔥 Feature Correlation")
-                fig2, ax2 = plt.subplots(figsize=(10, 6))
-                sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
-                st.pyplot(fig2)
+        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig',
+                    'diffOrig', 'estNewDest', 'flagOldZero', 'flagNewZero']
+        X = df[features]
+        y = df["isFraud"]
 
-                st.markdown("### 📈 Transaction Amount Distribution")
-                fig3, ax3 = plt.subplots(figsize=(10, 5))
-                sns.histplot(df[df["isFraud"] == 0]["amount"], bins=60, color="green", label="Legit", ax=ax3)
-                sns.histplot(df[df["isFraud"] == 1]["amount"], bins=60, color="red", label="Fraud", ax=ax3)
-                ax3.set_xlim(0, 200000)
-                ax3.set_title("Fraud vs Legit Transactions")
-                ax3.legend()
-                st.pyplot(fig3)
+        # Split for evaluation
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        y_pred = model.predict(X_test)
 
-                st.markdown("### 📉 Balance Drop (Fraud vs Legit)")
-                df["balanceDiff"] = df["oldbalanceOrg"] - df["newbalanceOrig"]
-                fig4, ax4 = plt.subplots()
-                sns.boxplot(x="isFraud", y="balanceDiff", data=df, palette=["green", "red"], ax=ax4)
-                st.pyplot(fig4)
+        # Confusion Matrix
+        st.markdown("### 📌 Confusion Matrix")
+        cm = confusion_matrix(y_test, y_pred)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
+        st.pyplot(fig)
 
-        except Exception as e:
-            st.warning("⚠️ Could not generate analytics.")
-            st.text(str(e))
+        # Classification Report
+        st.markdown("### 📄 Classification Report")
+        report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
+        st.dataframe(report_df)
 
+        # Correlation Heatmap
+        st.markdown("### 🔥 Feature Correlation")
+        fig2, ax2 = plt.subplots(figsize=(10, 6))
+        sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
+        st.pyplot(fig2)
 
+        # Transaction Amount Distribution
+        st.markdown("### 📈 Transaction Amount Distribution")
+        fig3, ax3 = plt.subplots(figsize=(10, 5))
+        sns.histplot(df[df['isFraud'] == 0]['amount'], bins=60, color='green', label='Legit', ax=ax3)
+        sns.histplot(df[df['isFraud'] == 1]['amount'], bins=60, color='red', label='Fraud', ax=ax3)
+        ax3.set_xlim(0, 200000)
+        ax3.set_title("Fraud vs Legit Transactions")
+        ax3.legend()
+        st.pyplot(fig3)
+
+        # Balance Drop Boxplot
+        st.markdown("### 📉 Balance Drop (Fraud vs Legit)")
+        df["balanceDiff"] = df["oldbalanceOrg"] - df["newbalanceOrig"]
+        fig4, ax4 = plt.subplots()
+        sns.boxplot(x="isFraud", y="balanceDiff", data=df, palette=["green", "red"], ax=ax4)
+        ax4.set_title("Balance Difference Boxplot")
+        st.pyplot(fig4)
+
+    except Exception as e:
+        st.warning("⚠️ Could not generate analytics.")
+        st.text(str(e))
