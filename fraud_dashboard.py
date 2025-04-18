@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 import joblib
 from datetime import datetime
+# Initialize session state to store transaction log
+if "predicted_transactions" not in st.session_state:
+    st.session_state.predicted_transactions = []
+
 
 # Load the trained model
 model = joblib.load("xgb_model.pkl")
@@ -77,6 +81,17 @@ if st.button("🔮 Predict"):
             st.error("🚨 This transaction is FRAUDULENT.")
         else:
             st.success("✅ This transaction is LEGITIMATE.")
+   
+# Log transaction for monitoring
+st.session_state.predicted_transactions.append({
+    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "Amount": amount,
+    "Type": transaction_type,
+    "Old Balance": old_balance,
+    "New Balance": new_balance,
+    "Prediction": "FRAUD" if prediction == 1 else "LEGIT"
+})
+
 
     except Exception as e:
         st.warning("Something went wrong while predicting.")
@@ -86,24 +101,20 @@ if st.button("🔮 Predict"):
 # 📤 Upload & Monitor Page
 # =============================
 elif selected == "📤 Upload & Monitor":
-    st.title("📤 Upload CSV for Bulk Analysis")
+    st.title("📤 Monitored Transactions")
 
-    uploaded_file = st.file_uploader("Upload your transaction dataset", type=["csv"])
-    if uploaded_file:
-        df = pd.read_csv(uploaded_file)
-        st.write("🧾 Preview of Uploaded Transactions:")
-        st.dataframe(df.head())
+    if st.session_state.predicted_transactions:
+        df = pd.DataFrame(st.session_state.predicted_transactions)
+        st.dataframe(df)
 
-        # Make predictions if structure is correct
-        try:
-            df = df[["type", "amount", "oldbalanceOrg", "newbalanceOrig", 
-                     "oldbalanceDest", "newbalanceDest", "isFlaggedFraud", "step"]]
-            df["Prediction"] = model.predict(df)
-            frauds = df[df["Prediction"] == 1]
-            st.success(f"✅ Scanned {len(df)} transactions. Found {len(frauds)} potential fraud cases.")
-            st.dataframe(frauds)
-        except Exception as e:
-            st.warning(f"⚠️ Could not predict due to incorrect file format.\n\n{e}")
+        fraud_count = (df["Prediction"] == "FRAUD").sum()
+        st.metric("🚨 Total Fraudulent Transactions", fraud_count)
+
+        # Export CSV
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button("📄 Download Fraud Report", csv, "fraud_report.csv", "text/csv")
+    else:
+        st.info("No transactions predicted yet.")
 
 # =============================
 # 📊 Reports Page
