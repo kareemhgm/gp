@@ -21,7 +21,6 @@ st.title("💼 AI-Powered Fraud Detection Dashboard")
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
 
 if dark_mode:
-    # Fix for dark mode visibility
     st.markdown("""
     <style>
         body {
@@ -37,9 +36,7 @@ if dark_mode:
         }
     </style>
     """, unsafe_allow_html=True)
-
 else:
-    # AI-themed visual enhancement for light mode
     st.markdown("""
     <style>
         body {
@@ -52,14 +49,10 @@ else:
             font-family: 'Segoe UI', sans-serif;
             scroll-behavior: smooth;
         }
-
-        /* Inputs hover */
         input:hover, select:hover, textarea:hover {
             background-color: #f0f8ff !important;
             transition: 0.3s ease;
         }
-
-        /* Buttons hover */
         .stButton>button {
             color: white !important;
             background-color: #2b7de9 !important;
@@ -88,12 +81,19 @@ if 'predicted_transactions' not in st.session_state:
     st.session_state.predicted_transactions = []
 
 # -------------------------------------
-# SIDEBAR NAV
+# SIDEBAR NAVIGATION
 # -------------------------------------
-section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📁 All Logs", "📊 Reports"])
+section = st.sidebar.radio("Go to", [
+    "🏠 Overview", 
+    "🔍 Predict", 
+    "📬 Upload & Monitor", 
+    "📁 All Logs", 
+    "📊 Reports", 
+    "🧠 Retrain Model"
+])
 
 # -------------------------------------
-# PDF GENERATOR
+# PDF REPORT GENERATOR
 # -------------------------------------
 def generate_pdf_report(df):
     pdf = FPDF()
@@ -130,10 +130,9 @@ if section == "🏠 Overview":
 
     💡 Features:
     - Real-time transaction classification
-    - Permanent CSV fraud logging
     - Exportable fraud reports (PDF + CSV)
-    - Model performance testing
-    - Visual analytics to detect patterns
+    - Permanent CSV fraud logging
+    - Visual analytics and model insights
     """)
 
 # -------------------------------------
@@ -267,6 +266,41 @@ elif section == "📊 Reports":
         st.warning("⚠️ Unable to generate analytics.")
         st.text(str(e))
 
+# -------------------------------------
+# RETRAIN MODEL TAB
+# -------------------------------------
+elif section == "🧠 Retrain Model":
+    st.subheader("🧠 Retrain Model from New Dataset")
+
+    uploaded_file = st.file_uploader("Upload CSV Dataset", type=["csv"])
+
+    if uploaded_file:
+        try:
+            df = pd.read_csv(uploaded_file)
+            st.success("✅ Dataset uploaded successfully.")
+            st.write("Preview:", df.head())
+
+            if st.button("Train on New Dataset"):
+                with st.spinner("Training new model..."):
+                    df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
+                    df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+                    df = df.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
+
+                    from xgboost import XGBClassifier
+                    features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+                    X = df[features]
+                    y = df['isFraud']
+
+                    model_new = XGBClassifier(n_estimators=100, max_depth=5, learning_rate=0.1, use_label_encoder=False, eval_metric='logloss')
+                    model_new.fit(X, y)
+
+                    joblib.dump(model_new, "xgb_fraud_model.pkl")
+                    st.success("✅ Model retrained and saved as xgb_fraud_model.pkl. You can now use it for new predictions.")
+
+        except Exception as e:
+            st.error(f"❌ Error during training: {e}")
+    else:
+        st.info("Please upload a new dataset (CSV) to begin retraining.")
 
 
 
