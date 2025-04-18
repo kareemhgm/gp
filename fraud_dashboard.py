@@ -8,6 +8,7 @@ import seaborn as sns
 from fpdf import FPDF
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
+import os
 
 # -------------------------------------
 # CONFIG
@@ -16,23 +17,16 @@ st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wid
 st.title("💼 AI-Powered Fraud Detection Dashboard")
 
 # -------------------------------------
-# DARK MODE + CUSTOM STYLING
+# DARK MODE + BACKGROUND
 # -------------------------------------
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
 
 if dark_mode:
     st.markdown("""
     <style>
-        body {
-            background-color: #0e1117 !important;
-            color: #ffffff !important;
-            background-image: none !important;
-        }
+        body { background-color: #0e1117 !important; color: #fafafa !important; background-image: none !important; }
         .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea, .stMarkdown, .stButton>button {
             color: white !important;
-        }
-        .stMarkdown, div, span, section {
-            color: #ffffff !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -42,22 +36,15 @@ else:
         body {
             background-image: url("https://images.unsplash.com/photo-1581092334783-f4476c2145ab?fit=crop&w=1600&q=80");
             background-size: cover;
-            background-repeat: no-repeat;
             background-attachment: fixed;
         }
         html, body, [class*="css"] {
             font-family: 'Segoe UI', sans-serif;
-            scroll-behavior: smooth;
-        }
-        input:hover, select:hover, textarea:hover {
-            background-color: #f0f8ff !important;
-            transition: 0.3s ease;
         }
         .stButton>button {
-            color: white !important;
             background-color: #2b7de9 !important;
+            color: white !important;
             border-radius: 6px !important;
-            transition: background-color 0.3s ease !important;
         }
         .stButton>button:hover {
             background-color: #1e63c4 !important;
@@ -68,11 +55,9 @@ else:
 # -------------------------------------
 # LOAD MODEL
 # -------------------------------------
-try:
+model = None
+if os.path.exists("xgb_fraud_model.pkl"):
     model = joblib.load("xgb_fraud_model.pkl")
-except FileNotFoundError:
-    st.error("❌ Model file not found. Please upload 'xgb_fraud_model.pkl' to your repo.")
-    st.stop()
 
 # -------------------------------------
 # SESSION STATE
@@ -81,26 +66,18 @@ if 'predicted_transactions' not in st.session_state:
     st.session_state.predicted_transactions = []
 
 # -------------------------------------
-# SIDEBAR NAVIGATION
+# SIDEBAR NAV
 # -------------------------------------
-section = st.sidebar.radio("Go to", [
-    "🏠 Overview", 
-    "🔍 Predict", 
-    "📬 Upload & Monitor", 
-    "📁 All Logs", 
-    "📊 Reports", 
-    "🧠 Retrain Model"
-])
+section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📁 All Logs", "📊 Reports"])
 
 # -------------------------------------
-# PDF REPORT GENERATOR
+# PDF GENERATOR
 # -------------------------------------
 def generate_pdf_report(df):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.set_title("Fraud Detection Report – Kareem Morad")
-
     pdf.cell(200, 10, txt="📄 Fraud Detection Report", ln=True, align='C')
     pdf.ln(10)
 
@@ -130,9 +107,10 @@ if section == "🏠 Overview":
 
     💡 Features:
     - Real-time transaction classification
-    - Exportable fraud reports (PDF + CSV)
     - Permanent CSV fraud logging
-    - Visual analytics and model insights
+    - Exportable fraud reports (PDF + CSV)
+    - Model performance testing
+    - Visual analytics to detect patterns
     """)
 
 # -------------------------------------
@@ -141,45 +119,48 @@ if section == "🏠 Overview":
 elif section == "🔍 Predict":
     st.subheader("⚡ Real-Time Transaction Prediction")
 
-    amount = st.number_input("Transaction Amount", value=5000.0)
-    tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"])
-    old_balance = st.number_input("Old Balance", value=10000.0)
-    new_balance = st.number_input("New Balance", value=500.0)
+    if model is None:
+        st.error("❌ Model not found. Upload 'xgb_fraud_model.pkl' to enable predictions.")
+    else:
+        amount = st.number_input("Transaction Amount", value=5000.0)
+        tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"])
+        old_balance = st.number_input("Old Balance", value=10000.0)
+        new_balance = st.number_input("New Balance", value=500.0)
 
-    if st.button("🔍 Predict"):
-        try:
-            type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
-            input_data = pd.DataFrame([[
-                type_map[tx_type], amount, old_balance, new_balance,
-                old_balance - amount, new_balance + amount,
-                int(old_balance == 0), int(new_balance == 0)
-            ]], columns=[
-                "type", "amount", "oldbalanceOrg", "newbalanceOrig",
-                "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
-            ])
-            prediction = model.predict(input_data)[0]
-            result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
-            st.success(f"Prediction: {result}")
-
-            record = {
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Amount": amount,
-                "Type": tx_type,
-                "Old Balance": old_balance,
-                "New Balance": new_balance,
-                "Prediction": result
-            }
-
-            st.session_state.predicted_transactions.append(record)
-
+        if st.button("🔍 Predict"):
             try:
-                log_df = pd.DataFrame([record])
-                log_df.to_csv("permanent_log.csv", mode='a', header=not pd.read_csv("permanent_log.csv").shape[0], index=False)
-            except FileNotFoundError:
-                pd.DataFrame([record]).to_csv("permanent_log.csv", index=False)
+                type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
+                input_data = pd.DataFrame([[
+                    type_map[tx_type], amount, old_balance, new_balance,
+                    old_balance - amount, new_balance + amount,
+                    int(old_balance == 0), int(new_balance == 0)
+                ]], columns=[
+                    "type", "amount", "oldbalanceOrg", "newbalanceOrig",
+                    "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
+                ])
+                prediction = model.predict(input_data)[0]
+                result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
+                st.success(f"Prediction: {result}")
 
-        except Exception as e:
-            st.error(f"Prediction failed: {e}")
+                record = {
+                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "Amount": amount,
+                    "Type": tx_type,
+                    "Old Balance": old_balance,
+                    "New Balance": new_balance,
+                    "Prediction": result
+                }
+
+                st.session_state.predicted_transactions.append(record)
+
+                try:
+                    log_df = pd.DataFrame([record])
+                    log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
+                except:
+                    pass
+
+            except Exception as e:
+                st.error(f"Prediction failed: {e}")
 
 # -------------------------------------
 # MONITOR TAB
@@ -214,93 +195,61 @@ elif section == "📁 All Logs":
         st.info("No permanent log file found yet. Predict at least one transaction.")
 
 # -------------------------------------
-# REPORTS TAB
+# REPORTS TAB (with CSV UPLOAD)
 # -------------------------------------
 elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
 
-    try:
-        df_full = pd.read_csv("PS_20174392719_1491204439457_log.csv")
-        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
-        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
-        df_full = df_full.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
-
-        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
-        X = df_full[features]
-        y = df_full['isFraud']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        y_pred = model.predict(X_test)
-
-        st.markdown("### 📌 Confusion Matrix")
-        cm = confusion_matrix(y_test, y_pred)
-        fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
-        st.pyplot(fig)
-
-        st.markdown("### 📄 Classification Report")
-        report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
-        st.dataframe(report_df)
-
-        st.markdown("### 🔥 Feature Correlation")
-        fig2, ax2 = plt.subplots(figsize=(10, 6))
-        sns.heatmap(df_full.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
-        st.pyplot(fig2)
-
-        st.markdown("### 📈 Transaction Amount Distribution")
-        fig3, ax3 = plt.subplots(figsize=(10, 5))
-        sns.histplot(df_full[df_full['isFraud'] == 0]['amount'], bins=60, color='green', label='Legit', ax=ax3)
-        sns.histplot(df_full[df_full['isFraud'] == 1]['amount'], bins=60, color='red', label='Fraud', ax=ax3)
-        ax3.set_xlim(0, 200000)
-        ax3.set_title("Fraud vs Legit Transactions")
-        ax3.legend()
-        st.pyplot(fig3)
-
-        st.markdown("### 📉 Balance Drop (Fraud vs Legit)")
-        df_full["balanceDiff"] = df_full["oldbalanceOrg"] - df_full["newbalanceOrig"]
-        fig4, ax4 = plt.subplots()
-        sns.boxplot(x="isFraud", y="balanceDiff", data=df_full, palette=["green", "red"], ax=ax4)
-        ax4.set_title("Balance Difference Boxplot")
-        st.pyplot(fig4)
-
-    except Exception as e:
-        st.warning("⚠️ Unable to generate analytics.")
-        st.text(str(e))
-
-# -------------------------------------
-# RETRAIN MODEL TAB
-# -------------------------------------
-elif section == "🧠 Retrain Model":
-    st.subheader("🧠 Retrain Model from New Dataset")
-
-    uploaded_file = st.file_uploader("Upload CSV Dataset", type=["csv"])
-
-    if uploaded_file:
-        try:
-            df = pd.read_csv(uploaded_file)
-            st.success("✅ Dataset uploaded successfully.")
-            st.write("Preview:", df.head())
-
-            if st.button("Train on New Dataset"):
-                with st.spinner("Training new model..."):
-                    df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
-                    df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
-                    df = df.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
-
-                    from xgboost import XGBClassifier
-                    features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
-                    X = df[features]
-                    y = df['isFraud']
-
-                    model_new = XGBClassifier(n_estimators=100, max_depth=5, learning_rate=0.1, use_label_encoder=False, eval_metric='logloss')
-                    model_new.fit(X, y)
-
-                    joblib.dump(model_new, "xgb_fraud_model.pkl")
-                    st.success("✅ Model retrained and saved as xgb_fraud_model.pkl. You can now use it for new predictions.")
-
-        except Exception as e:
-            st.error(f"❌ Error during training: {e}")
+    if model is None:
+        st.error("❌ Model not found. Upload 'xgb_fraud_model.pkl' to enable reports.")
     else:
-        st.info("Please upload a new dataset (CSV) to begin retraining.")
+        uploaded = st.file_uploader("📤 Upload CSV dataset for report analysis", type=["csv"])
 
+        if uploaded:
+            try:
+                df_full = pd.read_csv(uploaded)
+                df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+                df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+                df_full = df_full.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
 
+                features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+                X = df_full[features]
+                y = df_full['isFraud']
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                y_pred = model.predict(X_test)
 
+                st.markdown("### 📌 Confusion Matrix")
+                cm = confusion_matrix(y_test, y_pred)
+                fig, ax = plt.subplots()
+                sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
+                st.pyplot(fig)
+
+                st.markdown("### 📄 Classification Report")
+                report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
+                st.dataframe(report_df)
+
+                st.markdown("### 🔥 Feature Correlation")
+                fig2, ax2 = plt.subplots(figsize=(10, 6))
+                sns.heatmap(df_full.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
+                st.pyplot(fig2)
+
+                st.markdown("### 📈 Transaction Amount Distribution")
+                fig3, ax3 = plt.subplots(figsize=(10, 5))
+                sns.histplot(df_full[df_full['isFraud'] == 0]['amount'], bins=60, color='green', label='Legit', ax=ax3)
+                sns.histplot(df_full[df_full['isFraud'] == 1]['amount'], bins=60, color='red', label='Fraud', ax=ax3)
+                ax3.set_xlim(0, 200000)
+                ax3.set_title("Fraud vs Legit Transactions")
+                ax3.legend()
+                st.pyplot(fig3)
+
+                st.markdown("### 📉 Balance Drop (Fraud vs Legit)")
+                df_full["balanceDiff"] = df_full["oldbalanceOrg"] - df_full["newbalanceOrig"]
+                fig4, ax4 = plt.subplots()
+                sns.boxplot(x="isFraud", y="balanceDiff", data=df_full, palette=["green", "red"], ax=ax4)
+                ax4.set_title("Balance Difference Boxplot")
+                st.pyplot(fig4)
+
+            except Exception as e:
+                st.error(f"❌ Failed to process uploaded file: {e}")
+        else:
+            st.info("📂 Please upload your fraud dataset (CSV) to view analysis.")
