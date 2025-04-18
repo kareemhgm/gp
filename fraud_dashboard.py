@@ -80,6 +80,83 @@ elif section == "📬 Upload & Monitor":
         st.info("No transactions monitored yet.")
 
 elif section == "📊 Reports":
+    elif section == "📊 Reports":
+    st.subheader("📊 Fraud Insights & Analysis")
+elif section == "📊 Reports":
+    st.subheader("📊 Fraud Detection Insights")
+
+    try:
+        # Load your dataset
+        df_full = pd.read_csv("PS_20174392719_1491204439457_log.csv")
+
+        # Keep only relevant types
+        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+
+        # Drop unused columns
+        df_full = df_full.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
+
+        # 🔥 1. Correlation Heatmap
+        st.markdown("### 🔥 Correlation Heatmap")
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        corr = df_full.corr()
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
+        st.pyplot(fig)
+
+        # 📈 2. Amount Distribution by Class
+        st.markdown("### 📈 Transaction Amount Distribution")
+        fig2, ax2 = plt.subplots(figsize=(10, 5))
+        sns.histplot(data=df_full[df_full['isFraud'] == 0], x='amount', bins=60, color='green', label='Legit', ax=ax2)
+        sns.histplot(data=df_full[df_full['isFraud'] == 1], x='amount', bins=60, color='red', label='Fraud', ax=ax2)
+        ax2.set_xlim(0, 200000)
+        ax2.set_title("Transaction Amounts – Fraud vs Legit")
+        ax2.legend()
+        st.pyplot(fig2)
+
+    except Exception as e:
+        st.warning("⚠️ Could not load dataset for analytics.")
+        st.text(str(e))
+
+    # Load the dataset (optional: replace with your full cleaned dataset if needed)
+    try:
+        df_full = pd.read_csv("PS_20174392719_1491204439457_log.csv")
+
+        # Filter to match model usage
+        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+        df_full = df_full.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
+
+        st.markdown("### 🔥 Correlation Heatmap")
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+
+        corr = df_full.corr()
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
+        st.pyplot(fig)
+
+        st.markdown("### 📈 Distribution of Transaction Amounts")
+        fig2, ax2 = plt.subplots()
+        sns.histplot(df_full[df_full['isFraud'] == 0]['amount'], bins=50, color='green', label='Legit', ax=ax2)
+        sns.histplot(df_full[df_full['isFraud'] == 1]['amount'], bins=50, color='red', label='Fraud', ax=ax2)
+        ax2.set_title("Transaction Amount Distribution by Class")
+        ax2.legend()
+        st.pyplot(fig2)
+
+        st.markdown("### 📉 Balance Differences in Fraud Cases")
+        df_full["balanceDiff"] = df_full["oldbalanceOrg"] - df_full["newbalanceOrig"]
+        fig3, ax3 = plt.subplots()
+        sns.boxplot(x="isFraud", y="balanceDiff", data=df_full, palette=["green", "red"], ax=ax3)
+        ax3.set_title("Balance Drop in Fraud vs Legit")
+        st.pyplot(fig3)
+
+    except Exception as e:
+        st.warning("⚠️ Could not load dataset for report visuals.")
+        st.text(str(e))
+
     st.subheader("📊 Model Performance Report")
     st.write("This section will soon include visualizations of performance metrics and insights from the full test set.")
     st.info("Coming soon!")
