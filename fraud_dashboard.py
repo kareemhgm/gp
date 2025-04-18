@@ -43,57 +43,44 @@ if selected == "🏠 Overview":
 # =============================
 # 🔍 Predict Page
 # =============================
-elif selected == "🔍 Predict":
-    st.title("🔍 Real-Time Transaction Prediction")
+st.subheader("🔍 Real-Time Transaction Prediction")
 
-    amount = st.number_input("Transaction Amount", min_value=0.0, format="%.2f")
-    type_input = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT"])
-    old_balance = st.number_input("Old Balance", min_value=0.0, format="%.2f")
-    new_balance = st.number_input("New Balance", min_value=0.0, format="%.2f")
+# User Inputs
+amount = st.number_input("Transaction Amount", min_value=0.0, format="%.2f")
+transaction_type = st.selectbox("Transaction Type", ["PAYMENT", "TRANSFER", "CASH_OUT", "DEBIT", "CASH_IN"])
+old_balance = st.number_input("Old Balance", min_value=0.0, format="%.2f")
+new_balance = st.number_input("New Balance", min_value=0.0, format="%.2f")
 
-    if st.button("🔮 Predict", use_container_width=True):
-        try:
-            input_df = pd.DataFrame([{
-                'type': type_input,
-                'amount': amount,
-                'oldbalanceOrg': old_balance,
-                'newbalanceOrig': new_balance,
-                'oldbalanceDest': 0.0,
-                'newbalanceDest': 0.0,
-                'isFlaggedFraud': 0,
-                'step': 1
-            }])
-            
-            # Ensure correct order
-  input_df = pd.DataFrame([{
-    'type': type_input,
-    'amount': amount,
-    'oldbalanceOrg': old_balance,
-    'newbalanceOrig': new_balance,
-    'oldbalanceDest': 0.0,
-    'newbalanceDest': 0.0,
-    'isFlaggedFraud': 0,
-    'step': 1
-}])
+if st.button("🔮 Predict"):
+    try:
+        # Convert transaction type to numeric
+        type_dict = {'PAYMENT': 0, 'TRANSFER': 1, 'CASH_OUT': 2, 'DEBIT': 3, 'CASH_IN': 4}
+        type_num = type_dict.get(transaction_type.upper(), 0)
 
-# Encoding transaction type to match training format
-type_mapping = {'PAYMENT': 0, 'TRANSFER': 1, 'CASH_OUT': 2}
-input_df['type'] = input_df['type'].map(type_mapping)
+        # Create input with all 8 expected features
+        input_data = pd.DataFrame([{
+            "step": 1,
+            "type": type_num,
+            "amount": amount,
+            "oldbalanceOrg": old_balance,
+            "newbalanceOrig": new_balance,
+            "oldbalanceDest": 0.0,
+            "newbalanceDest": 0.0,
+            "isFlaggedFraud": 0
+        }])
 
-# Ensure correct column order
-input_df = input_df[["type", "amount", "oldbalanceOrg", "newbalanceOrig", 
-                     "oldbalanceDest", "newbalanceDest", "isFlaggedFraud", "step"]]
+        # Predict using trained model
+        prediction = model.predict(input_data)[0]
 
-# Prediction
-prediction = model.predict(input_df)[0]
-         
+        # Output result
+        if prediction == 1:
+            st.error("🚨 This transaction is FRAUDULENT.")
+        else:
+            st.success("✅ This transaction is LEGITIMATE.")
 
-            if prediction == 1:
-                st.error("🚨 This transaction is FRAUDULENT.")
-            else:
-                st.success("✅ This transaction is LEGITIMATE.")
-        except Exception as e:
-            st.warning(f"Something went wrong while predicting.\n\n{e}")
+    except Exception as e:
+        st.warning("Something went wrong while predicting.")
+        st.text(str(e))
 
 # =============================
 # 📤 Upload & Monitor Page
