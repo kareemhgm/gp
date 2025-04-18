@@ -8,6 +8,32 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
+
+from fpdf import FPDF
+
+def generate_pdf_report(df):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt="📄 Fraud Detection Report", ln=True, align='C')
+    pdf.ln(10)
+
+    total = len(df)
+    frauds = df[df["Prediction"].str.contains("FRAUD")]
+    fraud_count = len(frauds)
+
+    pdf.cell(200, 10, txt=f"Total Transactions: {total}", ln=True)
+    pdf.cell(200, 10, txt=f"Fraudulent Transactions: {fraud_count}", ln=True)
+    pdf.ln(10)
+
+    pdf.set_font("Arial", size=10)
+    for idx, row in frauds.iterrows():
+        pdf.cell(200, 8, txt=f"{row['Timestamp']} | {row['Type']} | {row['Amount']} | FRAUD", ln=True)
+
+    pdf.output("fraud_report.pdf")
+
+
 # Load trained model
 model = joblib.load('xgb_fraud_model.pkl')
 
