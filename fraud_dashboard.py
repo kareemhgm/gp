@@ -225,22 +225,20 @@ elif section == "📁 All Logs":
 elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
 
-    try:
-        df_full = pd.read_csv(uploaded_csv_path)
-        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
-        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+    if not model or not uploaded_csv_path:
+        st.error("❌ Model or dataset not found. Upload `.pkl` and `.csv` files to view analytics.")
+    else:
+        try:
+            df_full = pd.read_csv(uploaded_csv_path)
+            df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+            df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
 
-        # Safely drop only existing columns
-        df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
+            df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
 
-        # ✅ Make sure this line is not over-indented
-        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
-        X = df_full[features]
-        y = df_full['isFraud']
-            
-        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
-            X = df[features]
-            y = df["isFraud"]
+            features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+            X = df_full[features]
+            y = df_full['isFraud']
+
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             y_pred = model.predict(X_test)
 
@@ -254,24 +252,8 @@ elif section == "📊 Reports":
             report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
             st.dataframe(report_df)
 
-            st.markdown("### 🔥 Feature Correlation")
-            fig2, ax2 = plt.subplots(figsize=(10, 6))
-            sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
-            st.pyplot(fig2)
-
-            st.markdown("### 📈 Transaction Amount Distribution")
-            fig3, ax3 = plt.subplots(figsize=(10, 5))
-            sns.histplot(df[df["isFraud"] == 0]["amount"], bins=60, color="green", label="Legit", ax=ax3)
-            sns.histplot(df[df["isFraud"] == 1]["amount"], bins=60, color="red", label="Fraud", ax=ax3)
-            ax3.set_xlim(0, 200000)
-            ax3.legend()
-            ax3.set_title("Fraud vs Legit Amount Distribution")
-            st.pyplot(fig3)
-
         except Exception as e:
             st.warning("⚠️ Unable to generate analytics.")
             st.text(str(e))
-    else:
-        st.error("❌ Model or dataset not found. Upload `.pkl` and `.csv` files to view analytics.")
 
 
