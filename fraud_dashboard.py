@@ -84,6 +84,25 @@ elif section == "📊 Reports":
     st.subheader("📊 Fraud Insights & Analysis")
 elif section == "📊 Reports":
     st.subheader("📊 Fraud Detection Insights")
+    st.markdown("### 🧠 Model Evaluation")
+
+    from sklearn.metrics import classification_report, confusion_matrix
+
+    # Predict on test set
+    y_pred = model.predict(X_test)
+
+    # Show Confusion Matrix
+    st.markdown("#### Confusion Matrix")
+    cm = confusion_matrix(y_test, y_pred)
+    fig, ax = plt.subplots()
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
+    st.pyplot(fig)
+
+    # Show Classification Report
+    st.markdown("#### Classification Report")
+    report = classification_report(y_test, y_pred, output_dict=True)
+    st.dataframe(pd.DataFrame(report).transpose())
+
 
     try:
         # Load your dataset
