@@ -16,6 +16,63 @@ st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wid
 st.title("💼 AI-Powered Fraud Detection Dashboard")
 
 # -------------------------------------
+# DARK MODE + CUSTOM STYLING
+# -------------------------------------
+dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
+
+if dark_mode:
+    # Fix for dark mode visibility
+    st.markdown("""
+    <style>
+        body {
+            background-color: #0e1117 !important;
+            color: #ffffff !important;
+            background-image: none !important;
+        }
+        .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea, .stMarkdown, .stButton>button {
+            color: white !important;
+        }
+        .stMarkdown, div, span, section {
+            color: #ffffff !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+else:
+    # AI-themed visual enhancement for light mode
+    st.markdown("""
+    <style>
+        body {
+            background-image: url("https://images.unsplash.com/photo-1581092334783-f4476c2145ab?fit=crop&w=1600&q=80");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        html, body, [class*="css"] {
+            font-family: 'Segoe UI', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Inputs hover */
+        input:hover, select:hover, textarea:hover {
+            background-color: #f0f8ff !important;
+            transition: 0.3s ease;
+        }
+
+        /* Buttons hover */
+        .stButton>button {
+            color: white !important;
+            background-color: #2b7de9 !important;
+            border-radius: 6px !important;
+            transition: background-color 0.3s ease !important;
+        }
+        .stButton>button:hover {
+            background-color: #1e63c4 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+# -------------------------------------
 # LOAD MODEL
 # -------------------------------------
 try:
@@ -23,13 +80,6 @@ try:
 except FileNotFoundError:
     st.error("❌ Model file not found. Please upload 'xgb_fraud_model.pkl' to your repo.")
     st.stop()
-
-# -------------------------------------
-# DARK MODE
-# -------------------------------------
-dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
-if dark_mode:
-    st.markdown("<style>body { background-color: #0e1117; color: #fafafa; }</style>", unsafe_allow_html=True)
 
 # -------------------------------------
 # SESSION STATE
@@ -40,7 +90,7 @@ if 'predicted_transactions' not in st.session_state:
 # -------------------------------------
 # SIDEBAR NAV
 # -------------------------------------
-section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📊 Reports"])
+section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📁 All Logs", "📊 Reports"])
 
 # -------------------------------------
 # PDF GENERATOR
@@ -49,8 +99,8 @@ def generate_pdf_report(df):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-
     pdf.set_title("Fraud Detection Report – Kareem Morad")
+
     pdf.cell(200, 10, txt="📄 Fraud Detection Report", ln=True, align='C')
     pdf.ln(10)
 
@@ -80,6 +130,7 @@ if section == "🏠 Overview":
 
     💡 Features:
     - Real-time transaction classification
+    - Permanent CSV fraud logging
     - Exportable fraud reports (PDF + CSV)
     - Model performance testing
     - Visual analytics to detect patterns
@@ -111,14 +162,23 @@ elif section == "🔍 Predict":
             result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
             st.success(f"Prediction: {result}")
 
-            st.session_state.predicted_transactions.append({
+            record = {
                 "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "Amount": amount,
                 "Type": tx_type,
                 "Old Balance": old_balance,
                 "New Balance": new_balance,
                 "Prediction": result
-            })
+            }
+
+            st.session_state.predicted_transactions.append(record)
+
+            try:
+                log_df = pd.DataFrame([record])
+                log_df.to_csv("permanent_log.csv", mode='a', header=not pd.read_csv("permanent_log.csv").shape[0], index=False)
+            except FileNotFoundError:
+                pd.DataFrame([record]).to_csv("permanent_log.csv", index=False)
+
         except Exception as e:
             st.error(f"Prediction failed: {e}")
 
@@ -132,18 +192,27 @@ elif section == "📬 Upload & Monitor":
         df_logs = pd.DataFrame(st.session_state.predicted_transactions)
         st.dataframe(df_logs)
 
-        # CSV export
         csv = df_logs.to_csv(index=False).encode("utf-8")
         st.download_button("⬇️ Download CSV Report", csv, "fraud_report.csv", "text/csv")
 
-        # PDF export
         if st.button("📄 Generate PDF Fraud Report"):
             generate_pdf_report(df_logs)
             with open("fraud_report.pdf", "rb") as file:
                 st.download_button("⬇️ Download PDF", file.read(), file_name="fraud_report.pdf", mime="application/pdf")
-
     else:
         st.info("No transactions have been predicted yet.")
+
+# -------------------------------------
+# ALL LOGS TAB
+# -------------------------------------
+elif section == "📁 All Logs":
+    st.subheader("📁 Permanent Log – All Transactions")
+    try:
+        full_logs = pd.read_csv("permanent_log.csv")
+        st.dataframe(full_logs)
+        st.download_button("⬇️ Download All Logs (CSV)", full_logs.to_csv(index=False), file_name="permanent_log.csv", mime="text/csv")
+    except FileNotFoundError:
+        st.info("No permanent log file found yet. Predict at least one transaction.")
 
 # -------------------------------------
 # REPORTS TAB
@@ -163,25 +232,21 @@ elif section == "📊 Reports":
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         y_pred = model.predict(X_test)
 
-        # Confusion Matrix
         st.markdown("### 📌 Confusion Matrix")
         cm = confusion_matrix(y_test, y_pred)
         fig, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
         st.pyplot(fig)
 
-        # Classification Report
         st.markdown("### 📄 Classification Report")
         report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
         st.dataframe(report_df)
 
-        # Correlation Heatmap
         st.markdown("### 🔥 Feature Correlation")
         fig2, ax2 = plt.subplots(figsize=(10, 6))
         sns.heatmap(df_full.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
         st.pyplot(fig2)
 
-        # Transaction Amount Histogram
         st.markdown("### 📈 Transaction Amount Distribution")
         fig3, ax3 = plt.subplots(figsize=(10, 5))
         sns.histplot(df_full[df_full['isFraud'] == 0]['amount'], bins=60, color='green', label='Legit', ax=ax3)
@@ -191,7 +256,6 @@ elif section == "📊 Reports":
         ax3.legend()
         st.pyplot(fig3)
 
-        # Balance Difference Boxplot
         st.markdown("### 📉 Balance Drop (Fraud vs Legit)")
         df_full["balanceDiff"] = df_full["oldbalanceOrg"] - df_full["newbalanceOrig"]
         fig4, ax4 = plt.subplots()
@@ -202,8 +266,6 @@ elif section == "📊 Reports":
     except Exception as e:
         st.warning("⚠️ Unable to generate analytics.")
         st.text(str(e))
-
-
 
 
 
