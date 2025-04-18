@@ -224,12 +224,17 @@ elif section == "📁 All Logs":
 # -------------------------------------
 elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
-    if model and os.path.exists("PS_20174392719_1491204439457_log.csv"):
-        try:
-            df = pd.read_csv("PS_20174392719_1491204439457_log.csv")
-            df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
-            df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
-            df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
+
+    try:
+        # 🟢 Load the uploaded dataset
+        df_full = pd.read_csv(uploaded_csv_path)
+
+        # 🟢 Keep only relevant transaction types
+        df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
+        df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+
+        # ✅ Drop optional columns only if they exist
+        df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
 
 
             features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
