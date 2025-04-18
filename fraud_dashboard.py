@@ -123,6 +123,18 @@ def generate_pdf_report(df):
 # -------------------------------------
 # NAVIGATION
 # -------------------------------------
+# -------------------------------------
+# HANDLE DATASET UPLOAD
+# -------------------------------------
+uploaded_csv_path = None
+csv_file = st.sidebar.file_uploader("📂 Upload Dataset (.csv)", type="csv", key="csv_uploader")
+
+if csv_file is not None:
+    with open("uploaded_data.csv", "wb") as f:
+        f.write(csv_file.read())
+    uploaded_csv_path = "uploaded_data.csv"
+    st.sidebar.success("✅ Dataset uploaded successfully.")
+
 section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📁 All Logs", "📊 Reports"])
 
 # -------------------------------------
