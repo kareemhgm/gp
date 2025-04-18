@@ -129,44 +129,36 @@ if section == "🏠 Overview":
 # PREDICT
 # -------------------------------------
 # -------------------------------------
-# PREDICT TAB (Updated for Balanced Model)
-# -------------------------------------
 elif section == "🔍 Predict":
     st.subheader("⚡ Real-Time Transaction Prediction")
 
     if model:
         amount = st.number_input("Transaction Amount", value=5000.0)
-        tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT"])
+        tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"])
         old_balance = st.number_input("Old Balance (Origin)", value=10000.0)
         new_balance = st.number_input("New Balance (Origin)", value=500.0)
 
+        # Compute additional required features
+        diff_orig = old_balance - amount
+        est_new_dest = new_balance + amount
+        flag_old_zero = int(old_balance == 0)
+        flag_new_zero = int(new_balance == 0)
+
         if st.button("🔍 Predict"):
             try:
-                type_map = {"TRANSFER": 0, "CASH_OUT": 1}
-                diffOrig = old_balance - amount
-                estNewDest = new_balance + amount
-                flagOldZero = int(old_balance == 0)
-                flagNewZero = int(new_balance == 0)
-
+                type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
                 input_data = pd.DataFrame([[
-                    type_map[tx_type],
-                    amount,
-                    old_balance,
-                    new_balance,
-                    diffOrig,
-                    estNewDest,
-                    flagOldZero,
-                    flagNewZero
+                    type_map[tx_type], amount, old_balance, new_balance,
+                    diff_orig, est_new_dest, flag_old_zero, flag_new_zero
                 ]], columns=[
-                    "type", "amount", "oldbalanceOrg", "newbalanceOrig",
-                    "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
+                    'type', 'amount', 'oldbalanceOrg', 'newbalanceOrig',
+                    'diffOrig', 'estNewDest', 'flagOldZero', 'flagNewZero'
                 ])
 
                 prediction = model.predict(input_data)[0]
                 result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
                 st.success(f"Prediction: {result}")
 
-                # Log and save
                 record = {
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "Amount": amount,
@@ -175,12 +167,14 @@ elif section == "🔍 Predict":
                     "New Balance": new_balance,
                     "Prediction": result
                 }
+
                 st.session_state.predicted_transactions.append(record)
 
-                log_df = pd.DataFrame([record])
-                log_df.to_csv("permanent_log.csv", mode='a',
-                              header=not os.path.exists("permanent_log.csv"),
-                              index=False)
+                try:
+                    log_df = pd.DataFrame([record])
+                    log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
+                except Exception:
+                    pass
 
             except Exception as e:
                 st.error(f"Prediction failed: {e}")
