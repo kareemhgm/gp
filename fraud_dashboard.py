@@ -106,16 +106,35 @@ elif selected == "📤 Upload & Monitor":
 
     if st.session_state.predicted_transactions:
         df = pd.DataFrame(st.session_state.predicted_transactions)
+
+        # Show live table
+        st.subheader("🧾 Transactions Log")
         st.dataframe(df)
 
+        # Fraud stats
+        total = len(df)
         fraud_count = (df["Prediction"] == "FRAUD").sum()
-        st.metric("🚨 Total Fraudulent Transactions", fraud_count)
+        legit_count = total - fraud_count
 
-        # Export CSV
+        st.subheader("📊 Summary")
+        col1, col2 = st.columns(2)
+        col1.metric("🔴 FRAUD", fraud_count)
+        col2.metric("🟢 LEGIT", legit_count)
+
+        # Plot fraud vs legit
+        st.subheader("📈 Fraud Distribution")
+        fig = plt.figure()
+        pd.Series(df["Prediction"]).value_counts().plot.pie(
+            labels=["LEGIT", "FRAUD"], autopct="%1.1f%%", colors=["green", "red"], explode=(0, 0.1))
+        st.pyplot(fig)
+
+        # Download Report
+        st.subheader("📄 Download Report")
         csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📄 Download Fraud Report", csv, "fraud_report.csv", "text/csv")
+        st.download_button("⬇️ Export CSV Report", csv, "fraud_report.csv", "text/csv")
     else:
-        st.info("No transactions predicted yet.")
+        st.info("No transactions have been predicted yet.")
+
 
 # =============================
 # 📊 Reports Page
