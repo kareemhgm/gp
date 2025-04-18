@@ -229,7 +229,8 @@ elif section == "📊 Reports":
             df = pd.read_csv("PS_20174392719_1491204439457_log.csv")
             df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
             df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
-            df = df.drop(columns=["nameOrig", "nameDest", "isFlaggedFraud", "step"])
+            df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
+
 
             features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
             X = df[features]
