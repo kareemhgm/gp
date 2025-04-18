@@ -125,6 +125,9 @@ if section == "🏠 Overview":
     """)
 
 # PREDICT
+# -------------------------------------
+# PREDICT
+# -------------------------------------
 elif section == "🔍 Predict":
     st.subheader("⚡ Real-Time Transaction Prediction")
 
@@ -136,28 +139,27 @@ elif section == "🔍 Predict":
 
         if st.button("🔍 Predict"):
             try:
-                # Prepare the input features (8 features expected by model)
+                # Map type and build feature vector with 8 features
                 type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
                 input_data = pd.DataFrame([[
-                    type_map[tx_type],                  # type
-                    amount,                             # amount
-                    old_balance,                        # oldbalanceOrg
-                    new_balance,                        # newbalanceOrig
-                    old_balance - amount,               # diffOrig
-                    new_balance + amount,               # estNewDest
-                    int(old_balance == 0),              # flagOldZero
-                    int(new_balance == 0)               # flagNewZero
+                    type_map[tx_type],                # type
+                    amount,                           # amount
+                    old_balance,                      # oldbalanceOrg
+                    new_balance,                      # newbalanceOrig
+                    0.0,                              # oldbalanceDest (assumed)
+                    0.0,                              # newbalanceDest (assumed)
+                    int(old_balance == 0),            # flagOldZero
+                    int(new_balance == 0)             # flagNewZero
                 ]], columns=[
                     "type", "amount", "oldbalanceOrg", "newbalanceOrig",
-                    "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
+                    "oldbalanceDest", "newbalanceDest", "flagOldZero", "flagNewZero"
                 ])
 
-                # Make prediction
                 prediction = model.predict(input_data)[0]
                 result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
                 st.success(f"Prediction: {result}")
 
-                # Save record
+                # Save to session state & log file
                 record = {
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "Amount": amount,
@@ -169,7 +171,6 @@ elif section == "🔍 Predict":
 
                 st.session_state.predicted_transactions.append(record)
 
-                # Save to permanent log
                 try:
                     log_df = pd.DataFrame([record])
                     log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
