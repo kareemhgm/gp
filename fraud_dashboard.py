@@ -3,159 +3,87 @@ import pandas as pd
 import numpy as np
 import joblib
 from datetime import datetime
-# Initialize session state to store transaction log
-if "predicted_transactions" not in st.session_state:
-    st.session_state.predicted_transactions = []
 
+# Load trained model
+model = joblib.load('xgb_model.pkl')
 
-# Load the trained model
-model = joblib.load("xgb_model.pkl")
+# Set page config
+st.set_page_config(page_title="AI Fraud Detection Dashboard", layout="wide")
 
-# Set page configuration
-st.set_page_config(page_title="AI Fraud Detection", layout="wide")
-
-# Sidebar navigation
-st.sidebar.title("🗂️ Navigation")
-selected = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📤 Upload & Monitor", "📊 Reports"])
-
-# DARK MODE TOGGLE
+# Dark mode toggle
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
 
-# Apply dark mode background
 if dark_mode:
-    st.markdown("""
-        <style>
-        body { background-color: #1e1e1e; color: white; }
-        .stApp { background-color: #1e1e1e; }
-        </style>
-    """, unsafe_allow_html=True)
+    st.markdown("<style>body { background-color: #0e1117; color: #fafafa; }</style>", unsafe_allow_html=True)
 
-# =============================
-# 🏠 Overview Page
-# =============================
-if selected == "🏠 Overview":
-    st.title("💡 Project Overview")
-    st.markdown("""
-        Welcome to the **AI-Powered Fraud Detection System**.  
-        This dashboard provides a smart and interactive way to:
-        - Monitor transactions in real-time  
-        - Detect fraudulent behavior using AI models  
-        - Explore detailed reports and metrics  
+# Initialize session state
+if 'predicted_transactions' not in st.session_state:
+    st.session_state.predicted_transactions = []
+
+# Sidebar navigation
+st.sidebar.markdown("📑 **Navigation**")
+section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📊 Reports"])
+
+# Main App Interface
+st.title("🔍 Real-Time Transaction Prediction")
+
+if section == "🏠 Overview":
+    st.subheader("📄 Project Overview")
+    st.write("""
+        This AI-powered dashboard uses a machine learning model trained on transaction data to detect fraudulent activities. 
+        You can test real-time predictions, monitor transactions, and view fraud detection reports.
     """)
-    st.image("https://img.freepik.com/free-vector/artificial-intelligence-illustration_52683-101910.jpg", width=600)
 
-# =============================
-# 🔍 Predict Page
-# =============================
-st.subheader("🔍 Real-Time Transaction Prediction")
+elif section == "🔍 Predict":
+    st.subheader("⚡ Real-Time Transaction Prediction")
+    
+    amount = st.number_input("Transaction Amount", value=5000.0)
+    tx_type = st.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT", "PAYMENT", "CASH_IN", "DEBIT"])
+    old_balance = st.number_input("Old Balance", value=10000.0)
+    new_balance = st.number_input("New Balance", value=500.0)
 
-# User Inputs
-amount = st.number_input("Transaction Amount", min_value=0.0, format="%.2f")
-transaction_type = st.selectbox("Transaction Type", ["PAYMENT", "TRANSFER", "CASH_OUT", "DEBIT", "CASH_IN"])
-old_balance = st.number_input("Old Balance", min_value=0.0, format="%.2f")
-new_balance = st.number_input("New Balance", min_value=0.0, format="%.2f")
+    if st.button("🧠 Predict"):
+        try:
+            type_map = {"TRANSFER": 0, "CASH_OUT": 1, "PAYMENT": 2, "CASH_IN": 3, "DEBIT": 4}
+            input_data = pd.DataFrame([[
+                type_map[tx_type], amount, old_balance, new_balance,
+                old_balance - amount, new_balance + amount,
+                int(old_balance == 0), int(new_balance == 0)
+            ]], columns=[
+                "type", "amount", "oldbalanceOrg", "newbalanceOrig",
+                "diffOrig", "estNewDest", "flagOldZero", "flagNewZero"
+            ])
+            prediction = model.predict(input_data)[0]
+            result = "FRAUDULENT ❌" if prediction == 1 else "LEGIT ✅"
+            color = "red" if prediction == 1 else "green"
+            st.success(f"Prediction: {result}")
 
-# Predict Button
-if st.button("🔮 Predict"):
-    try:
-        # Convert type to number
-        type_dict = {'PAYMENT': 0, 'TRANSFER': 1, 'CASH_OUT': 2, 'DEBIT': 3, 'CASH_IN': 4}
-        type_num = type_dict.get(transaction_type.upper(), 0)
+            st.session_state.predicted_transactions.append({
+                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Amount": amount,
+                "Type": tx_type,
+                "Old Balance": old_balance,
+                "New Balance": new_balance,
+                "Prediction": result
+            })
+        except Exception as e:
+            st.error(f"Something went wrong: {e}")
 
-        # Create input for model
-        input_data = pd.DataFrame([{
-            "step": 1,
-            "type": type_num,
-            "amount": amount,
-            "oldbalanceOrg": old_balance,
-            "newbalanceOrig": new_balance,
-            "oldbalanceDest": 0.0,
-            "newbalanceDest": 0.0,
-            "isFlaggedFraud": 0
-        }])
-
-        # Predict
-        prediction = model.predict(input_data)[0]
-
-        # Show Result
-        if prediction == 1:
-            st.error("🚨 This transaction is FRAUDULENT.")
-        else:
-            st.success("✅ This transaction is LEGITIMATE.")
-
-        # Log to session state
-        st.session_state.predicted_transactions.append({
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Amount": amount,
-            "Type": transaction_type,
-            "Old Balance": old_balance,
-            "New Balance": new_balance,
-            "Prediction": "FRAUD" if prediction == 1 else "LEGIT"
-        })
-
-    except Exception as e:
-        st.warning("Something went wrong while predicting:")
-        st.text(str(e))
-
-
-# =============================
-# 📤 Upload & Monitor Page
-# =============================
-elif selected == "📤 Upload & Monitor":
-    st.title("📤 Monitored Transactions")
+elif section == "📬 Upload & Monitor":
+    st.subheader("📬 Monitored Transactions")
+    st.write("Log of all tested transactions.")
 
     if st.session_state.predicted_transactions:
-        df = pd.DataFrame(st.session_state.predicted_transactions)
-
-        # Show live table
-        st.subheader("🧾 Transactions Log")
-        st.dataframe(df)
-
-        # Fraud stats
-        total = len(df)
-        fraud_count = (df["Prediction"] == "FRAUD").sum()
-        legit_count = total - fraud_count
-
-        st.subheader("📊 Summary")
-        col1, col2 = st.columns(2)
-        col1.metric("🔴 FRAUD", fraud_count)
-        col2.metric("🟢 LEGIT", legit_count)
-
-        # Plot fraud vs legit
-        st.subheader("📈 Fraud Distribution")
-        fig = plt.figure()
-        pd.Series(df["Prediction"]).value_counts().plot.pie(
-            labels=["LEGIT", "FRAUD"], autopct="%1.1f%%", colors=["green", "red"], explode=(0, 0.1))
-        st.pyplot(fig)
-
-        # Download Report
-        st.subheader("📄 Download Report")
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Export CSV Report", csv, "fraud_report.csv", "text/csv")
+        df_logs = pd.DataFrame(st.session_state.predicted_transactions)
+        st.dataframe(df_logs)
     else:
-        st.info("No transactions have been predicted yet.")
+        st.info("No transactions monitored yet.")
 
+elif section == "📊 Reports":
+    st.subheader("📊 Model Performance Report")
+    st.write("This section will soon include visualizations of performance metrics and insights from the full test set.")
+    st.info("Coming soon!")
 
-# =============================
-# 📊 Reports Page
-# =============================
-elif selected == "📊 Reports":
-    st.title("📊 Model Feature Importance")
-
-    try:
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-
-        booster = model.get_booster()
-        feature_names = booster.feature_names
-        feat_imp = pd.Series(model.feature_importances_, index=feature_names)
-
-        fig, ax = plt.subplots()
-        feat_imp.sort_values().plot(kind='barh', ax=ax, color='purple')
-        ax.set_title("Feature Importance", fontsize=14)
-        st.pyplot(fig)
-    except Exception as e:
-        st.error(f"Failed to load feature importance chart.\n\n{e}")
 
 
 
