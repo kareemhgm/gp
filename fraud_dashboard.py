@@ -78,13 +78,6 @@ if uploaded_model:
     st.sidebar.success("✅ Model uploaded successfully.")
 
 # -------------------------------------
-# UPLOAD DATASET (.csv)
-# -------------------------------------
-uploaded_dataset = st.sidebar.file_uploader("📤 Upload Dataset (.csv)", type="csv")
-if uploaded_dataset:
-    with open("PS_20174392719_1491204439457_log.csv", "wb") as f:
-        f.write(uploaded_dataset.read())
-    st.sidebar.success("✅ Dataset uploaded successfully.")
 
 # -------------------------------------
 # SESSION STATE
