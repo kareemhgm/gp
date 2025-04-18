@@ -226,15 +226,18 @@ elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
 
     try:
-        # 🟢 Load the uploaded dataset
         df_full = pd.read_csv(uploaded_csv_path)
-
-        # 🟢 Keep only relevant transaction types
         df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
         df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
 
-        # ✅ Drop optional columns only if they exist
+        # Safely drop only existing columns
         df_full = df_full.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df_full.columns])
+
+        # ✅ Make sure this line is not over-indented
+        features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
+        X = df_full[features]
+        y = df_full['isFraud']
+
 
 
             features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig', 'oldbalanceDest', 'newbalanceDest']
