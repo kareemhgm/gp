@@ -241,7 +241,12 @@ elif section == "📊 Reports":
         st.error("❌ Model or dataset not found. Upload `.pkl` and `.csv` files to view analytics.")
     else:
         try:
-            df_full = pd.read_csv(uploaded_csv_path)
+            if not uploaded_csv_path:
+    st.error("❌ No dataset uploaded. Please upload a CSV file to continue.")
+    st.stop()
+
+df_full = pd.read_csv(uploaded_csv_path)
+
             df_full = df_full[df_full["type"].isin(["TRANSFER", "CASH_OUT"])]
             df_full["type"] = df_full["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
 
