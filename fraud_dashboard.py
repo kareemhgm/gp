@@ -55,13 +55,14 @@ transaction_type = st.selectbox("Transaction Type", ["PAYMENT", "TRANSFER", "CAS
 old_balance = st.number_input("Old Balance", min_value=0.0, format="%.2f")
 new_balance = st.number_input("New Balance", min_value=0.0, format="%.2f")
 
+# Predict Button
 if st.button("🔮 Predict"):
     try:
-        # Convert transaction type to numeric
+        # Convert type to number
         type_dict = {'PAYMENT': 0, 'TRANSFER': 1, 'CASH_OUT': 2, 'DEBIT': 3, 'CASH_IN': 4}
         type_num = type_dict.get(transaction_type.upper(), 0)
 
-        # Create input with all 8 expected features
+        # Create input for model
         input_data = pd.DataFrame([{
             "step": 1,
             "type": type_num,
@@ -73,29 +74,29 @@ if st.button("🔮 Predict"):
             "isFlaggedFraud": 0
         }])
 
-        # Predict using trained model
+        # Predict
         prediction = model.predict(input_data)[0]
 
-        # Output result
+        # Show Result
         if prediction == 1:
             st.error("🚨 This transaction is FRAUDULENT.")
         else:
             st.success("✅ This transaction is LEGITIMATE.")
-   
-# Log transaction for monitoring
-st.session_state.predicted_transactions.append({
-    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    "Amount": amount,
-    "Type": transaction_type,
-    "Old Balance": old_balance,
-    "New Balance": new_balance,
-    "Prediction": "FRAUD" if prediction == 1 else "LEGIT"
-})
 
+        # Log to session state
+        st.session_state.predicted_transactions.append({
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Amount": amount,
+            "Type": transaction_type,
+            "Old Balance": old_balance,
+            "New Balance": new_balance,
+            "Prediction": "FRAUD" if prediction == 1 else "LEGIT"
+        })
 
     except Exception as e:
-        st.warning("Something went wrong while predicting.")
+        st.warning("Something went wrong while predicting:")
         st.text(str(e))
+
 
 # =============================
 # 📤 Upload & Monitor Page
