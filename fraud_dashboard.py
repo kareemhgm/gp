@@ -8,6 +8,12 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
+    if st.button("📄 Generate PDF Fraud Report"):
+        generate_pdf_report(df_logs)
+        with open("fraud_report.pdf", "rb") as file:
+            st.download_button("⬇️ Download PDF", file.read(), file_name="fraud_report.pdf", mime="application/pdf")
+
+
 
 from fpdf import FPDF
 
