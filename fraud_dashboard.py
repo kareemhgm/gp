@@ -15,9 +15,6 @@ st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wid
 st.title("💼 AI-Powered Fraud Detection Dashboard")
 
 # ================================
-# 🌐 Visual Styling & Theme
-# ================================
-
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
 
 if dark_mode:
@@ -25,27 +22,38 @@ if dark_mode:
     <style>
     body {
         background-color: #0e1117 !important;
-        color: #fafafa !important;
+        color: #f0f0f0 !important;
     }
     html, body, [class*="css"] {
         font-family: 'Segoe UI', sans-serif !important;
     }
-    .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea {
+    .stApp {
+        background-color: #121212;
+        color: white;
+    }
+    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div>div {
         background-color: #1e1e1e !important;
         color: white !important;
-        border-radius: 8px !important;
         border: 1px solid #333 !important;
+        border-radius: 8px !important;
     }
     .stButton>button {
         background-color: #1a73e8 !important;
         color: white !important;
-        padding: 0.6rem 1.2rem;
         border-radius: 8px;
+        padding: 0.6rem 1.2rem;
         transition: all 0.3s ease-in-out;
     }
     .stButton>button:hover {
-        background-color: #1662c4 !important;
+        background-color: #1558b0 !important;
         transform: scale(1.05);
+    }
+    .block-container {
+        animation: fadeIn 0.7s ease-in;
+    }
+    @keyframes fadeIn {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -54,48 +62,42 @@ else:
     st.markdown("""
     <style>
     body {
-        background: linear-gradient(135deg, #f0f4f8, #e3f2fd);
+        background: linear-gradient(135deg, #e3f2fd, #f8f9fa) !important;
         background-attachment: fixed;
-        background-size: cover;
-        color: #1a1a1a !important;
     }
     html, body, [class*="css"] {
         font-family: 'Segoe UI', sans-serif !important;
     }
-    .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea {
-        background-color: white !important;
-        color: black !important;
-        border-radius: 8px !important;
+    .stApp {
+        background-color: rgba(255, 255, 255, 0.8) !important;
+    }
+    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div>div {
+        background-color: #ffffff !important;
+        color: #000 !important;
         border: 1px solid #ccc !important;
+        border-radius: 8px !important;
     }
     .stButton>button {
         background-color: #2b7de9 !important;
         color: white !important;
-        padding: 0.6rem 1.2rem;
         border-radius: 8px;
+        padding: 0.6rem 1.2rem;
         transition: all 0.3s ease-in-out;
     }
     .stButton>button:hover {
         background-color: #1e63c4 !important;
         transform: scale(1.05);
     }
-
-    /* Animation on sections */
     .block-container {
-        animation: fadeInUp 0.8s ease;
+        animation: fadeIn 0.7s ease-in;
     }
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translate3d(0, 40px, 0);
-        }
-        to {
-            opacity: 1;
-            transform: none;
-        }
+    @keyframes fadeIn {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
     }
     </style>
     """, unsafe_allow_html=True)
+
 
 
 # UPLOAD MODEL (.pkl)
