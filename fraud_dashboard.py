@@ -14,49 +14,89 @@ import os
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
 st.title("💼 AI-Powered Fraud Detection Dashboard")
 
-# DARK MODE & THEME
+# ================================
+# 🌐 Visual Styling & Theme
+# ================================
+
 dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
+
 if dark_mode:
     st.markdown("""
     <style>
     body {
         background-color: #0e1117 !important;
-        color: #ffffff !important;
-        background-image: none !important;
+        color: #fafafa !important;
     }
-    .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame {
+    html, body, [class*="css"] {
+        font-family: 'Segoe UI', sans-serif !important;
+    }
+    .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea {
+        background-color: #1e1e1e !important;
         color: white !important;
+        border-radius: 8px !important;
+        border: 1px solid #333 !important;
     }
-    .stMarkdown, div, span, section {
-        color: #ffffff !important;
+    .stButton>button {
+        background-color: #1a73e8 !important;
+        color: white !important;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+    .stButton>button:hover {
+        background-color: #1662c4 !important;
+        transform: scale(1.05);
     }
     </style>
     """, unsafe_allow_html=True)
+
 else:
     st.markdown("""
     <style>
     body {
-        background-image: url("https://images.unsplash.com/photo-1581092334783-f4476c2145ab?fit=crop&w=1600&q=80");
-        background-size: cover;
-        background-repeat: no-repeat;
+        background: linear-gradient(135deg, #f0f4f8, #e3f2fd);
         background-attachment: fixed;
+        background-size: cover;
+        color: #1a1a1a !important;
     }
     html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif;
+        font-family: 'Segoe UI', sans-serif !important;
     }
-    input:hover, select:hover, textarea:hover {
-        background-color: #f0f8ff !important;
+    .stTextInput, .stNumberInput, .stSelectbox, .stDataFrame, .stTextArea {
+        background-color: white !important;
+        color: black !important;
+        border-radius: 8px !important;
+        border: 1px solid #ccc !important;
     }
     .stButton>button {
-        color: white !important;
         background-color: #2b7de9 !important;
-        border-radius: 6px !important;
+        color: white !important;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
     }
     .stButton>button:hover {
         background-color: #1e63c4 !important;
+        transform: scale(1.05);
+    }
+
+    /* Animation on sections */
+    .block-container {
+        animation: fadeInUp 0.8s ease;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 40px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
+
 
 # UPLOAD MODEL (.pkl)
 uploaded_model = st.sidebar.file_uploader("📤 Upload Trained Model (.pkl)", type="pkl")
