@@ -14,89 +14,53 @@ import os
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
 st.title("💼 AI-Powered Fraud Detection Dashboard")
 
-# ================================
-dark_mode = st.sidebar.toggle("🌙 Dark Mode", value=False)
+st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
 
-if dark_mode:
-    st.markdown("""
+# 🔷 Apply glowing dark SaaS theme
+st.markdown("""
     <style>
     body {
-        background-color: #0e1117 !important;
-        color: #f0f0f0 !important;
+        background: url('glow-bg.png') no-repeat center center fixed;
+        background-size: cover;
     }
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif !important;
+    h1, h2, h3, .stMarkdown, .stTitle {
+        color: #6cc3ff !important;
+        text-shadow: 0 0 10px #6cc3ff;
     }
-    .stApp {
-        background-color: #121212;
+    section[data-testid="stSidebar"] {
+        background-color: #0d1117 !important;
+        border-right: 1px solid #333;
+    }
+    .stButton>button {
+        background-color: #0f62fe;
         color: white;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 0 8px #6cc3ff;
+        transition: 0.3s ease-in-out;
     }
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div>div {
-        background-color: #1e1e1e !important;
-        color: white !important;
+    .stButton>button:hover {
+        background-color: #0043ce;
+        box-shadow: 0 0 12px #6cc3ff;
+        transform: scale(1.02);
+    }
+    .stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
+        background-color: #1c1f26 !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
         border: 1px solid #333 !important;
-        border-radius: 8px !important;
     }
-    .stButton>button {
-        background-color: #1a73e8 !important;
-        color: white !important;
-        border-radius: 8px;
-        padding: 0.6rem 1.2rem;
-        transition: all 0.3s ease-in-out;
+    .stDataFrame, .stAlert, .stFileUploader {
+        background-color: rgba(18, 20, 26, 0.8) !important;
+        border-radius: 12px;
+        padding: 10px;
     }
-    .stButton>button:hover {
-        background-color: #1558b0 !important;
-        transform: scale(1.05);
-    }
-    .block-container {
-        animation: fadeIn 0.7s ease-in;
-    }
-    @keyframes fadeIn {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
+    footer, header {
+        visibility: hidden;
     }
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-else:
-    st.markdown("""
-    <style>
-    body {
-        background: linear-gradient(135deg, #e3f2fd, #f8f9fa) !important;
-        background-attachment: fixed;
-    }
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif !important;
-    }
-    .stApp {
-        background-color: rgba(255, 255, 255, 0.8) !important;
-    }
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div>div {
-        background-color: #ffffff !important;
-        color: #000 !important;
-        border: 1px solid #ccc !important;
-        border-radius: 8px !important;
-    }
-    .stButton>button {
-        background-color: #2b7de9 !important;
-        color: white !important;
-        border-radius: 8px;
-        padding: 0.6rem 1.2rem;
-        transition: all 0.3s ease-in-out;
-    }
-    .stButton>button:hover {
-        background-color: #1e63c4 !important;
-        transform: scale(1.05);
-    }
-    .block-container {
-        animation: fadeIn 0.7s ease-in;
-    }
-    @keyframes fadeIn {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 
 
