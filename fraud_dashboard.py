@@ -15,8 +15,9 @@ st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wid
 st.markdown("""
     <style>
     body {
-        background: url('glow-bg.png') no-repeat center center fixed;
+        background: url('https://images.unsplash.com/photo-1581092334783-f4476c2145ab?fit=crop&w=1600&q=80') no-repeat center center fixed;
         background-size: cover;
+        font-family: 'Segoe UI', sans-serif;
     }
     h1, h2, h3, .stMarkdown, .stTitle {
         color: #6cc3ff !important;
@@ -49,6 +50,7 @@ st.markdown("""
         background-color: rgba(18, 20, 26, 0.8) !important;
         border-radius: 12px;
         padding: 10px;
+        color: white !important;
     }
     footer, header {
         visibility: hidden;
