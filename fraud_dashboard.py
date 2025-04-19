@@ -14,19 +14,32 @@ import os
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
 st.markdown("""
     <style>
-    body {
-        background: url('https://images.unsplash.com/photo-1581092334783-f4476c2145ab?fit=crop&w=1600&q=80') no-repeat center center fixed;
+    /* Entire page background */
+    body, .main {
+        background: radial-gradient(circle at top left, #0a0f1f, #000000) no-repeat center center fixed;
         background-size: cover;
-        font-family: 'Segoe UI', sans-serif;
+        color: white;
     }
-    h1, h2, h3, .stMarkdown, .stTitle {
+
+    /* Headings and titles */
+    h1, h2, h3, .stMarkdown, .stTitle, .stHeader, .css-10trblm {
         color: #6cc3ff !important;
         text-shadow: 0 0 10px #6cc3ff;
     }
+
+    /* Sidebar dark styling */
     section[data-testid="stSidebar"] {
         background-color: #0d1117 !important;
         border-right: 1px solid #333;
+        color: white !important;
     }
+
+    /* Sidebar radio buttons */
+    .stRadio > div {
+        color: white !important;
+    }
+
+    /* Buttons */
     .stButton>button {
         background-color: #0f62fe;
         color: white;
@@ -40,23 +53,34 @@ st.markdown("""
         box-shadow: 0 0 12px #6cc3ff;
         transform: scale(1.02);
     }
+
+    /* Inputs and dropdowns */
     .stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
         background-color: #1c1f26 !important;
         color: #ffffff !important;
         border-radius: 6px !important;
         border: 1px solid #333 !important;
     }
+
+    /* Dataframes and boxes */
     .stDataFrame, .stAlert, .stFileUploader {
-        background-color: rgba(18, 20, 26, 0.8) !important;
+        background-color: rgba(18, 20, 26, 0.85) !important;
         border-radius: 12px;
         padding: 10px;
         color: white !important;
     }
+
+    /* Sidebar upload text */
+    .stFileUploader label {
+        color: white !important;
+    }
+
     footer, header {
         visibility: hidden;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
