@@ -12,58 +12,50 @@ import os
 
 # THIS MUST BE FIRST Streamlit command
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
-
-# Custom styling (keep this right after page config)
 st.markdown("""
     <style>
-    html, body, [class*="css"] {
-        font-family: 'Segoe UI', sans-serif;
+    body {
         background: url('glow-bg.png') no-repeat center center fixed;
         background-size: cover;
     }
-
-    h1, h2, h3, h4 {
+    h1, h2, h3, .stMarkdown, .stTitle {
         color: #6cc3ff !important;
-        text-shadow: 0 0 12px #6cc3ff;
+        text-shadow: 0 0 10px #6cc3ff;
     }
-
     section[data-testid="stSidebar"] {
         background-color: #0d1117 !important;
         border-right: 1px solid #333;
     }
-
     .stButton>button {
-        background-color: #0f62fe !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
-        box-shadow: 0 0 8px #6cc3ff !important;
+        background-color: #0f62fe;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 0 8px #6cc3ff;
         transition: 0.3s ease-in-out;
     }
-
     .stButton>button:hover {
-        background-color: #0043ce !important;
-        box-shadow: 0 0 14px #6cc3ff !important;
+        background-color: #0043ce;
+        box-shadow: 0 0 12px #6cc3ff;
         transform: scale(1.02);
     }
-
-    .stTextInput>div>input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] {
-        background-color: #1e1e1e !important;
-        color: white !important;
-        border-radius: 5px !important;
-        border: 1px solid #444 !important;
+    .stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
+        background-color: #1c1f26 !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+        border: 1px solid #333 !important;
     }
-
-    .stDataFrame {
-        background-color: rgba(20, 20, 20, 0.8) !important;
-        border-radius: 10px;
+    .stDataFrame, .stAlert, .stFileUploader {
+        background-color: rgba(18, 20, 26, 0.8) !important;
+        border-radius: 12px;
+        padding: 10px;
     }
-
     footer, header {
         visibility: hidden;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 
 
