@@ -16,50 +16,71 @@ st.title("💼 AI-Powered Fraud Detection Dashboard")
 
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
 
-# 🔷 Apply glowing dark SaaS theme
-st.markdown("""
+if section == "🏠 Landing":
+    st.markdown("""
+    <!-- LANDING PAGE HEADER & LOGO -->
+    <div style="text-align: center; margin-top: 3rem;">
+      <img src="https://raw.githubusercontent.com/your-repo/logo.png" alt="AI-Powered Fraud Detection" style="max-width: 250px; margin-bottom: 1rem;">
+      <h1 style="color: white;">AI-Powered Fraud Detection</h1>
+      <p style="color: #cccccc; font-size: 1.1rem;">Smarter security. Real-time protection.</p>
+    </div>
+
+    <!-- GLOWING CARD ANIMATION CSS -->
     <style>
-    body {
-        background: url('glow-bg.png') no-repeat center center fixed;
-        background-size: cover;
+    .glow-card {
+      background: #0d1b2a;
+      border-radius: 12px;
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      transition: all 0.3s ease-in-out;
+      padding: 1.5rem;
+      color: white;
+      width: 100%;
     }
-    h1, h2, h3, .stMarkdown, .stTitle {
-        color: #6cc3ff !important;
-        text-shadow: 0 0 10px #6cc3ff;
+    .glow-card:hover {
+      box-shadow: 0 0 15px 4px rgba(0, 212, 255, 0.4);
+      transform: scale(1.02);
     }
-    section[data-testid="stSidebar"] {
-        background-color: #0d1117 !important;
-        border-right: 1px solid #333;
+    .stTabs [data-baseweb="tab-panel"] {
+      animation: fade-in 0.5s ease;
     }
-    .stButton>button {
-        background-color: #0f62fe;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 0 8px #6cc3ff;
-        transition: 0.3s ease-in-out;
-    }
-    .stButton>button:hover {
-        background-color: #0043ce;
-        box-shadow: 0 0 12px #6cc3ff;
-        transform: scale(1.02);
-    }
-    .stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
-        background-color: #1c1f26 !important;
-        color: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #333 !important;
-    }
-    .stDataFrame, .stAlert, .stFileUploader {
-        background-color: rgba(18, 20, 26, 0.8) !important;
-        border-radius: 12px;
-        padding: 10px;
-    }
-    footer, header {
-        visibility: hidden;
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     </style>
-""", unsafe_allow_html=True)
+
+    <!-- FEATURES SECTION -->
+    <div style="display: flex; gap: 2rem; margin: 2rem 0; flex-wrap: wrap;">
+      <div class="glow-card">
+        <h3>⚡ Real-Time Monitoring</h3>
+        <p>Analyze transactions instantly with predictive models trained on real-world financial data.</p>
+      </div>
+      <div class="glow-card">
+        <h3>🔐 Adaptive Learning</h3>
+        <p>The AI model continuously evolves by learning from new fraudulent patterns.</p>
+      </div>
+      <div class="glow-card">
+        <h3>📊 Full Visibility</h3>
+        <p>Track, investigate, and report fraud in a streamlined dashboard interface.</p>
+      </div>
+    </div>
+
+    <!-- TESTIMONIALS SECTION -->
+    <div style="margin-top: 3rem; color: white;">
+      <h2>🧠 What Our Partners Say</h2>
+      <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+        <div class="glow-card">
+          <strong>FinBank</strong>
+          <p>“Since integrating the dashboard, we’ve reduced false positives by 48%.”</p>
+        </div>
+        <div class="glow-card">
+          <strong>PayGuard</strong>
+          <p>“We caught our biggest fraud case within hours thanks to this model.”</p>
+        </div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 
 
 
