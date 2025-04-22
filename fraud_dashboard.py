@@ -2,22 +2,24 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import subprocess
+import sys
+import zipfile
+import os
 from datetime import datetime
 from fpdf import FPDF
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
-import os
-import zipfile
 
 # -------------------------------------
-# SAFE IMPORT gdown
+# SAFE INSTALL AND IMPORT GDOWN
 # -------------------------------------
 try:
     import gdown
-except ImportError:
-    os.system('pip install gdown')
+except ModuleNotFoundError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "gdown"])
     import gdown
 
 # -------------------------------------
@@ -261,6 +263,7 @@ elif section == "📊 Reports":
     except Exception as e:
         st.warning("⚠️ Could not generate analytics.")
         st.text(str(e))
+
 
 
 
