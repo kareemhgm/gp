@@ -9,8 +9,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 import os
-
-# 🌐 Google Drive support
+import zipfile
 import gdown
 
 # -------------------------------------
@@ -70,7 +69,7 @@ if uploaded_model:
     st.sidebar.success("✅ Model uploaded successfully.")
 
 # -------------------------------------
-# LOAD CSV FROM GOOGLE DRIVE
+# LOAD AND UNZIP CSV FROM GOOGLE DRIVE
 # -------------------------------------
 csv_url = st.sidebar.text_input("📥 Paste Google Drive Share Link")
 csv_ready = False
@@ -78,12 +77,23 @@ csv_ready = False
 if csv_url and "drive.google.com" in csv_url:
     try:
         file_id = csv_url.split("/d/")[1].split("/")[0]
-        gdown.download(f"https://drive.google.com/uc?id={file_id}", "uploaded_data.csv", quiet=False)
-        st.session_state["uploaded_csv_path"] = "uploaded_data.csv"
-        csv_ready = True
-        st.sidebar.success("✅ Dataset downloaded from Drive!")
-    except:
-        st.sidebar.error("❌ Invalid Drive link format.")
+        output_zip_path = "dataset.zip"
+        gdown.download(f"https://drive.google.com/uc?id={file_id}", output_zip_path, quiet=False)
+
+        with zipfile.ZipFile(output_zip_path, 'r') as zip_ref:
+            zip_ref.extractall("unzipped_data")
+
+        for file in os.listdir("unzipped_data"):
+            if file.endswith(".csv"):
+                csv_path = os.path.join("unzipped_data", file)
+                st.session_state["uploaded_csv_path"] = csv_path
+                csv_ready = True
+                st.sidebar.success(f"✅ Dataset extracted: {file}")
+                break
+        else:
+            st.sidebar.error("❌ No CSV file found in ZIP.")
+    except Exception as e:
+        st.sidebar.error(f"❌ Failed to download or unzip: {e}")
 
 # -------------------------------------
 # SESSION INITIALIZATION
@@ -243,5 +253,6 @@ elif section == "📊 Reports":
     except Exception as e:
         st.warning("⚠️ Could not generate analytics.")
         st.text(str(e))
+
 
 
