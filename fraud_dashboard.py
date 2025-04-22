@@ -138,6 +138,55 @@ try:
     sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax2)
     st.pyplot(fig2)
 
+    # ==============================
+    # 🔍 Show Only Predicted Frauds
+    # ==============================
+    st.markdown("### 🔎 Predicted Fraud Transactions Only")
+    fraud_df = df.iloc[X_test.index].copy()
+    fraud_df['Prediction'] = y_pred
+    fraud_df = fraud_df[fraud_df['Prediction'] == 1]
+    st.dataframe(fraud_df)
+
+    # ==============================
+    # 💾 Download Fraud Predictions
+    # ==============================
+    st.download_button("⬇️ Download Fraud Cases (CSV)", fraud_df.to_csv(index=False), "fraud_predictions.csv")
+
+    if st.button("⬇️ Export Fraud Summary PDF"):
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, "Fraud Detection Report", ln=True, align='C')
+        pdf.cell(200, 10, f"Total Fraud Cases: {len(fraud_df)}", ln=True)
+        pdf.cell(200, 10, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ln=True)
+        pdf.output("fraud_summary.pdf")
+        with open("fraud_summary.pdf", "rb") as file:
+            st.download_button("⬇️ Download PDF Report", file.read(), "fraud_summary.pdf")
+
+    # ==============================
+    # 📊 Feature Importance
+    # ==============================
+    st.markdown("### 🧠 Feature Importance")
+    importances = model.feature_importances_
+    feature_chart = pd.DataFrame({"Feature": X.columns, "Importance": importances}).sort_values("Importance", ascending=False)
+    st.bar_chart(feature_chart.set_index("Feature"))
+
+    # ==============================
+    # 📦 Monitor & Save Logs
+    # ==============================
+    st.markdown("### 📝 Logging Predictions")
+    log_entry = pd.DataFrame({
+        "Timestamp": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+        "Fraud Predictions": [int((y_pred == 1).sum())],
+        "Total Checked": [len(y_pred)]
+    })
+    log_path = "fraud_log.csv"
+    log_entry.to_csv(log_path, mode='a', header=not os.path.exists(log_path), index=False)
+
+    if os.path.exists(log_path):
+        st.markdown("### 📚 Historical Log")
+        st.dataframe(pd.read_csv(log_path))
+
 except Exception as e:
     st.warning("⚠️ Could not generate analytics.")
     st.text(str(e))
