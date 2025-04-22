@@ -1,94 +1,67 @@
+# ---------------------------- Imports ----------------------------
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import os
 from datetime import datetime
 from fpdf import FPDF
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
-import os
 
-# THIS MUST BE FIRST Streamlit command
+# ---------------------------- Page Configuration ----------------------------
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
+
+# ---------------------------- Custom CSS Styling ----------------------------
 st.markdown("""
-    <style>
-    /* Entire page background */
-    body, .main {
-        background: radial-gradient(circle at top left, #0a0f1f, #000000) no-repeat center center fixed;
-        background-size: cover;
-        color: white;
-    }
-
-    /* Headings and titles */
-    h1, h2, h3, .stMarkdown, .stTitle, .stHeader, .css-10trblm {
-        color: #6cc3ff !important;
-        text-shadow: 0 0 10px #6cc3ff;
-    }
-
-    /* Sidebar dark styling */
-    section[data-testid="stSidebar"] {
-        background-color: #0d1117 !important;
-        border-right: 1px solid #333;
-        color: white !important;
-    }
-
-    /* Sidebar radio buttons */
-    .stRadio > div {
-        color: white !important;
-    }
-
-    /* Buttons */
-    .stButton>button {
-        background-color: #0f62fe;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 0 8px #6cc3ff;
-        transition: 0.3s ease-in-out;
-    }
-    .stButton>button:hover {
-        background-color: #0043ce;
-        box-shadow: 0 0 12px #6cc3ff;
-        transform: scale(1.02);
-    }
-
-    /* Inputs and dropdowns */
-    .stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
-        background-color: #1c1f26 !important;
-        color: #ffffff !important;
-        border-radius: 6px !important;
-        border: 1px solid #333 !important;
-    }
-
-    /* Dataframes and boxes */
-    .stDataFrame, .stAlert, .stFileUploader {
-        background-color: rgba(18, 20, 26, 0.85) !important;
-        border-radius: 12px;
-        padding: 10px;
-        color: white !important;
-    }
-
-    /* Sidebar upload text */
-    .stFileUploader label {
-        color: white !important;
-    }
-
-    footer, header {
-        visibility: hidden;
-    }
-    </style>
+<style>
+body, .main {
+    background: radial-gradient(circle at top left, #0a0f1f, #000000) no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+}
+h1, h2, h3, .stMarkdown, .stTitle, .stHeader {
+    color: #6cc3ff !important;
+    text-shadow: 0 0 10px #6cc3ff;
+}
+section[data-testid="stSidebar"] {
+    background-color: #0d1117 !important;
+    border-right: 1px solid #333;
+    color: white;
+}
+.stButton>button {
+    background-color: #0f62fe;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 0 8px #6cc3ff;
+}
+.stButton>button:hover {
+    background-color: #0043ce;
+    box-shadow: 0 0 12px #6cc3ff;
+    transform: scale(1.02);
+}
+.stSelectbox, .stNumberInput, .stTextInput, .stTextArea {
+    background-color: #1c1f26 !important;
+    color: white !important;
+    border: 1px solid #333;
+    border-radius: 6px;
+}
+.stDataFrame, .stAlert, .stFileUploader {
+    background-color: rgba(18, 20, 26, 0.85);
+    border-radius: 12px;
+    padding: 10px;
+    color: white !important;
+}
+footer, header {
+    visibility: hidden;
+}
+</style>
 """, unsafe_allow_html=True)
 
-
-
-
-
-
-
-
-# UPLOAD MODEL (.pkl)
+# ---------------------------- Upload Model ----------------------------
 uploaded_model = st.sidebar.file_uploader("📤 Upload Trained Model (.pkl)", type="pkl")
 model = None
 if uploaded_model:
@@ -98,7 +71,7 @@ if uploaded_model:
     st.session_state["model"] = model
     st.sidebar.success("✅ Model uploaded successfully.")
 
-# UPLOAD DATASET (.csv)
+# ---------------------------- Upload Dataset ----------------------------
 uploaded_dataset = st.sidebar.file_uploader("📤 Upload Dataset (.csv)", type="csv", key="csv")
 if uploaded_dataset:
     with open("uploaded_data.csv", "wb") as f:
@@ -106,59 +79,50 @@ if uploaded_dataset:
     st.session_state["uploaded_csv_path"] = "uploaded_data.csv"
     st.sidebar.success("✅ Dataset uploaded successfully.")
 
-# SESSION STATE
+# ---------------------------- Initialize Session ----------------------------
 if "predicted_transactions" not in st.session_state:
     st.session_state.predicted_transactions = []
 
+# ---------------------------- PDF Report Generator ----------------------------
 def generate_pdf_report(df):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     pdf.set_title("Fraud Detection Report – Kareem Morad")
-
-    # Avoid emojis and special characters
     pdf.cell(200, 10, txt="Fraud Detection Report", ln=True, align='C')
     pdf.ln(10)
 
     total = len(df)
-    frauds = df[df["Prediction"].str.contains("FRAUD")]
-    fraud_count = len(frauds)
-
+    fraud_count = len(df[df["Prediction"].str.contains("FRAUD")])
     pdf.cell(200, 10, txt=f"Total Transactions: {total}", ln=True)
     pdf.cell(200, 10, txt=f"Fraudulent Transactions: {fraud_count}", ln=True)
     pdf.ln(5)
     pdf.set_font("Arial", size=10)
 
-    for _, row in frauds.iterrows():
-        # Replace unsupported characters to avoid Unicode error
-        line = f"{row['Timestamp']} | {row['Type']} | {row['Amount']} | FRAUD"
+    for _, row in df.iterrows():
+        line = f"{row['Timestamp']} | {row['Type']} | {row['Amount']} | {row['Prediction']}"
         pdf.cell(200, 8, txt=line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
 
     pdf.cell(200, 10, txt="Generated by Kareem Morad", ln=True, align='C')
     pdf.output("fraud_report.pdf")
 
-
-# NAVIGATION
+# ---------------------------- Navigation ----------------------------
 section = st.sidebar.radio("Go to", ["🏠 Overview", "🔍 Predict", "📬 Upload & Monitor", "📁 All Logs", "📊 Reports"])
 
-# OVERVIEW
+# ---------------------------- Overview Page ----------------------------
 if section == "🏠 Overview":
     st.subheader("📄 Project Overview")
     st.write("""
     This dashboard showcases an AI-powered fraud detection model built and trained by Kareem Morad.
 
     💡 Features:
-    - Uploadable .pkl model & .csv dataset
-    - Real-time transaction classification
-    - Fraud reports (PDF + CSV)
-    - Full analytics and correlation insights
+    - Uploadable model (.pkl) & dataset (.csv)
+    - Real-time fraud prediction
+    - Exportable reports (PDF + CSV)
+    - Full fraud analytics and correlation visuals
     """)
 
-# PREDICT
-# -------------------------------------
-# PREDICT
-# -------------------------------------
-# -------------------------------------
+# ---------------------------- Predict Page ----------------------------
 elif section == "🔍 Predict":
     st.subheader("⚡ Real-Time Transaction Prediction")
 
@@ -168,7 +132,6 @@ elif section == "🔍 Predict":
         old_balance = st.number_input("Old Balance (Origin)", value=10000.0)
         new_balance = st.number_input("New Balance (Origin)", value=500.0)
 
-        # Compute additional required features
         diff_orig = old_balance - amount
         est_new_dest = new_balance + amount
         flag_old_zero = int(old_balance == 0)
@@ -200,19 +163,15 @@ elif section == "🔍 Predict":
 
                 st.session_state.predicted_transactions.append(record)
 
-                try:
-                    log_df = pd.DataFrame([record])
-                    log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
-                except Exception:
-                    pass
+                log_df = pd.DataFrame([record])
+                log_df.to_csv("permanent_log.csv", mode='a', header=not os.path.exists("permanent_log.csv"), index=False)
 
             except Exception as e:
                 st.error(f"Prediction failed: {e}")
     else:
-        st.warning("⚠️ Please upload a trained model to start predictions.")
+        st.warning("⚠️ Please upload a model to use prediction features.")
 
-
-# MONITOR
+# ---------------------------- Monitor Transactions ----------------------------
 elif section == "📬 Upload & Monitor":
     st.subheader("📬 Monitored Transactions")
     if st.session_state.predicted_transactions:
@@ -228,7 +187,7 @@ elif section == "📬 Upload & Monitor":
     else:
         st.info("No transactions yet.")
 
-# LOGS
+# ---------------------------- Permanent Log Page ----------------------------
 elif section == "📁 All Logs":
     st.subheader("📁 Permanent Log – All Transactions")
     try:
@@ -236,41 +195,30 @@ elif section == "📁 All Logs":
         st.dataframe(logs)
         st.download_button("⬇️ Download All Logs", logs.to_csv(index=False), "permanent_log.csv", "text/csv")
     except FileNotFoundError:
-        st.info("No log file found yet.")
+        st.info("No permanent log found.")
 
-# -------------------------------------
-# REPORTS TAB
-# -------------------------------------
+# ---------------------------- Reports & Analytics ----------------------------
 elif section == "📊 Reports":
     st.subheader("📊 Model Evaluation & Fraud Insights")
 
-    if not model or not uploaded_dataset:
-        st.error("❌ Model or dataset not found. Please upload both a .pkl and a .csv file to view analytics.")
+    if not model or "uploaded_csv_path" not in st.session_state:
+        st.error("❌ Please upload both model and dataset first.")
         st.stop()
 
     try:
-        df = pd.read_csv("uploaded_data.csv")
+        df = pd.read_csv(st.session_state["uploaded_csv_path"])
+        df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
+        df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
+        df = df.drop(columns=[col for col in ["nameOrig", "nameDest", "isFlaggedFraud", "step"] if col in df.columns], errors="ignore")
 
-        # Optional: Filter types
-        if "type" in df.columns:
-            df = df[df["type"].isin(["TRANSFER", "CASH_OUT"])]
-            df["type"] = df["type"].map({"TRANSFER": 0, "CASH_OUT": 1})
-
-        # Drop optional columns if they exist
-        drop_cols = ["nameOrig", "nameDest", "isFlaggedFraud", "step"]
-        df = df.drop(columns=[col for col in drop_cols if col in df.columns], errors="ignore")
-
-        # Add engineered features to match model input
+        # Add engineered features
         df["diffOrig"] = df["oldbalanceOrg"] - df["amount"]
         df["estNewDest"] = df["newbalanceOrig"] + df["amount"]
         df["flagOldZero"] = (df["oldbalanceOrg"] == 0).astype(int)
         df["flagNewZero"] = (df["newbalanceOrig"] == 0).astype(int)
 
-        # Final features expected by model
-        required = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig',
-                    'diffOrig', 'estNewDest', 'flagOldZero', 'flagNewZero', 'isFraud']
-        if not all(col in df.columns for col in required):
-            st.warning("⚠️ Dataset is missing one or more required columns.")
+        if "isFraud" not in df.columns:
+            st.warning("❌ Dataset missing target column 'isFraud'.")
             st.stop()
 
         features = ['type', 'amount', 'oldbalanceOrg', 'newbalanceOrig',
@@ -278,21 +226,19 @@ elif section == "📊 Reports":
         X = df[features]
         y = df["isFraud"]
 
-        # Split for evaluation
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         y_pred = model.predict(X_test)
 
         # Confusion Matrix
         st.markdown("### 📌 Confusion Matrix")
-        cm = confusion_matrix(y_test, y_pred)
         fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
+        sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt="d", cmap="Blues",
+                    xticklabels=["Legit", "Fraud"], yticklabels=["Legit", "Fraud"])
         st.pyplot(fig)
 
         # Classification Report
         st.markdown("### 📄 Classification Report")
-        report_df = pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose()
-        st.dataframe(report_df)
+        st.dataframe(pd.DataFrame(classification_report(y_test, y_pred, output_dict=True)).transpose())
 
         # Correlation Heatmap
         st.markdown("### 🔥 Feature Correlation")
@@ -300,13 +246,12 @@ elif section == "📊 Reports":
         sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f", ax=ax2)
         st.pyplot(fig2)
 
-        # Transaction Amount Distribution
+        # Amount Distribution
         st.markdown("### 📈 Transaction Amount Distribution")
         fig3, ax3 = plt.subplots(figsize=(10, 5))
         sns.histplot(df[df['isFraud'] == 0]['amount'], bins=60, color='green', label='Legit', ax=ax3)
         sns.histplot(df[df['isFraud'] == 1]['amount'], bins=60, color='red', label='Fraud', ax=ax3)
         ax3.set_xlim(0, 200000)
-        ax3.set_title("Fraud vs Legit Transactions")
         ax3.legend()
         st.pyplot(fig3)
 
@@ -315,9 +260,9 @@ elif section == "📊 Reports":
         df["balanceDiff"] = df["oldbalanceOrg"] - df["newbalanceOrig"]
         fig4, ax4 = plt.subplots()
         sns.boxplot(x="isFraud", y="balanceDiff", data=df, palette=["green", "red"], ax=ax4)
-        ax4.set_title("Balance Difference Boxplot")
         st.pyplot(fig4)
 
     except Exception as e:
         st.warning("⚠️ Could not generate analytics.")
         st.text(str(e))
+
