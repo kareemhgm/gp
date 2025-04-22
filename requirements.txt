@@ -1,8 +1,11 @@
 streamlit
 pandas
-xgboost
-scikit-learn
+numpy
+joblib
+fpdf
 matplotlib
 seaborn
-fpdf==1.7.2
+scikit-learn
+gdown
+
 
