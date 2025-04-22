@@ -13,6 +13,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 # ---------------------------- Page Configuration ----------------------------
 st.set_page_config(page_title="AI Fraud Detection – Kareem Morad", layout="wide")
+st.set_option('server.maxUploadSize', 1024)  # Allows uploads up to 1 GB
 
 # ---------------------------- Custom CSS Styling ----------------------------
 st.markdown("""
