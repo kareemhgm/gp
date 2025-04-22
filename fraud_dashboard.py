@@ -10,7 +10,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 import os
 import zipfile
-import gdown
+
+# -------------------------------------
+# SAFE IMPORT gdown
+# -------------------------------------
+try:
+    import gdown
+except ImportError:
+    os.system('pip install gdown')
+    import gdown
 
 # -------------------------------------
 # CONFIGURATION
@@ -253,6 +261,7 @@ elif section == "📊 Reports":
     except Exception as e:
         st.warning("⚠️ Could not generate analytics.")
         st.text(str(e))
+
 
 
 
